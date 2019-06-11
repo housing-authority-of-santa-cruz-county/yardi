@@ -103,7 +103,7 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 							  + CASE WHEN ltrim(IsNull(S.sProgram1d, '')) IN ('P', 'H') THEN '' ELSE 'the Owner, '
 							  +	LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, '')))
 							  + ', and ' END
-							  + 'the PHA, ' + PHA.sAgencyName + ' and the LESSEE (''FAMILY''), '
+							  + 'the PHA, ' + PHA.sAgencyName + ' and on behalf of the LESSEE (''FAMILY''), '
 							  + LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, ''))) + '(' + T.sCode + ') for the following described unit '
 							  + lTrim(rTrim(U.sCode)) + ' located at '
 								+ rTrim(Case When len(ltrim(IsNull(A.sAddr1, ''))) > 0 Then ltrim(A.sAddr1)   Else '' End
@@ -234,11 +234,11 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
   									LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, ''))) OwnerName,
   									LTrim(RTrim(IsNull(CW.sFirstName, '') + ' ' + IsNull(CW.uLastName, ''))) CaseWorkerName,
   									LTRIM(CASE WHEN len(ltrim(IsNull(E.sUser1, ''))) > 0 THEN '' + Left(LTrim(E.sUser1),3) + ') ' + SubString(LTrim(E.sUser1),4,3) + '-' + Right(LTrim(E.sUser1),4) Else '' END) CWPhone,
-									  'This change to the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN '' ELSE 'Housing Voucher Contract and/or' END + ' Lease Agreement will be effective from '
+									  'This change to the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + ' will be effective from '
 									  + CONVERT(VARCHAR(10), S.dtEffective2b, 101) +'.  The next reexamination is due on '
 									  + CONVERT(VARCHAR(10), S.DTNEXTEFFECTIVE2D, 101) + '.' + Char(10) + Char(10)
-									  +'This change is presented to you in accordance with the terms and conditions of the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN '' ELSE 'Housing Voucher Contract and/or' END + ' Lease Agreement and shall be attached to and made a part of your ' + CASE WHEN S.SPROGRAM1D = 'P' THEN '' ELSE 'Housing Voucher Contract and/or' END + ' Lease Agreement.  All other covenants, terms and conditions of the original '
-									  + CASE WHEN S.SPROGRAM1D = 'P' THEN '' ELSE 'Housing Voucher Contract and/or' END + ' Lease Agreement remain the same.' LeaseAmendmentPara,
+									  +'This change is presented to you in accordance with the terms and conditions of the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + ' and shall be attached to and made a part of your ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + '.  All other covenants, terms and conditions of the original '
+									  + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + ' remain the same.' LeaseAmendmentPara,
 									  S.hMy _KEY_,
   									'FamMem' _GRID_0,
   									'Pays' _GRID_1,
