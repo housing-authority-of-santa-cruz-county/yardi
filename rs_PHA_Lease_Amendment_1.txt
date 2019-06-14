@@ -448,6 +448,7 @@ From H8Param PHA,
   Left Join Vendor Ven On Ven.hMyPerson = S.hVendor
   Left Join Person CW On (CW.hMy = S.hCaseWorker and CW.IPersonType = 79)
   Left Join PrEmployee E On E.hMyPerson = CW.hMy
+  cross join board_commishes_footer_RSC rsc
   Left Join (Select Distinct 'Newly Added Member' ChangeDesc,
   					LTrim(RTrim(IsNull(F.sFirstName , '') + ' ' + IsNull(F.sLastName, ''))) MemberName,
 					  Case When DateDiff(yy, F.dtDOB, getDate()) < 18 Then 'X' Else '' End ChkMinor,
