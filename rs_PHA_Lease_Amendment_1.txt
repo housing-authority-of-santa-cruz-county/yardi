@@ -67,7 +67,15 @@ Where sCerts <> ''
 //Select Primary
 Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 '\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'
-                            headerImage,
+                headerImage,
+                rsc.chairperson                             chairperson,
+                rsc.viceChairperson                         viceChairperson,
+                rsc.boardmember1                            boardmember1,
+                rsc.boardmember2                            boardmember2,
+                rsc.boardmember3                            boardmember3,
+                rsc.boardmember4                            boardmember4,
+                rsc.boardmember5                            boardmember5,
+                rsc.execDirector                            execDirector,
 								PHA.sAgencyName HAName,
 							  S.hMy hMy,
 							  S.hTenant,
