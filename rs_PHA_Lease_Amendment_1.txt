@@ -66,6 +66,8 @@ Where sCerts <> ''
 
 //Select Primary
 Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
+'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'
+                            headerImage,
 								PHA.sAgencyName HAName,
 							  S.hMy hMy,
 							  S.hTenant,
@@ -80,17 +82,111 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 								When 'H'  Then 'Home Ownership'
 								else '' end + ' Program - Notice of change to Lease and Contract' ProgramLine,
   							S.sProjNum,
-  							Case When IsNull(S.sActionType2a, '') = '2' Then 'X' Else '' End  CheckAnnual,
-                Case When IsNull(S.sActionType2a, '') = '3' Then 'X'  Else '' End CheckInterim,
+  							Case When IsNull(S.sActionType2a, '') = '2' Then 'X' Else '  ' End  CheckAnnual,
+                Case When IsNull(S.sActionType2a, '') = '3' Then 'X'  Else Case when ISNULL(Case Prev58.sProgram1d
+                      When 'P' Then 0
+                      When 'CE' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C1.dOwnProHAP11an), 0)
+                                                           Else ISNULL(Convert(Numeric(21), C1.dOwnHAP11t), 0)
+                                      End)
+                      When 'PV' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C1.dOwnProHAP11an), 0)
+                                                            Else ISNULL(Convert(Numeric(21), C1.dOwnHAP11t), 0)
+                                      End)
+                      When 'VO' Then (Case V1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),V1.dOwnProHAP12ak), 0)
+                                                            Else ISNULL(Convert(Numeric(21), V1.dOwnHAP12w), 0)
+                                      End)
+                      When 'MR' Then (Case M1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),M1.dOwnProHAP13z), 0)
+                                                           Else ISNULL(Convert(Numeric(21), M1.dOwnHAP13m), 0)
+                                      End)
+                      When 'H' Then (Case H1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),H1.dProHAP15ae), 0)
+                                                           Else ISNULL(Convert(Numeric(21), H1.dHAP15r), 0)
+                                      End)
+                End,0) +
+                ISNULL(Case Prev58.sProgram1d
+                        When 'P' Then (Case P1.sRentType When 'F' Then ISNULL(Convert(Numeric(21), P1.dFlatRent), 0)
+                                                         Else (Case P1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), P1.dMixedTR10s), 0)
+                                                                                    Else ISNULL(Convert(Numeric(21), P1.dTR10e), 0)
+                                                              End)
+                                       End)
+                        When 'CE' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C1.dMixedTR11ak), 0)
+                                                             Else ISNULL(Convert(Numeric(21), C1.dTR11s), 0)
+                                       End)
+                        When 'PV' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C1.dMixedTR11ak), 0)
+                                                             Else ISNULL(Convert(Numeric(21), C1.dTR11s), 0)
+                                       End)
+                        When 'VO' Then (Case V1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), V1.dMixedTR12ai), 0)
+                                                             Else ISNULL(Convert(Numeric(21), V1.dFamRent12x), 0)
+                                       End)
+                        When 'MR' Then (Case M1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), M1.dMixedTR13x), 0)
+                                                             Else ISNULL(Convert(Numeric(21), M1.dTR13k), 0)
+                                       End)
+                        When 'H' Then (Case H1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), H1.dMixedTS15af), 0)
+                                                            Else ISNULL(Convert(Numeric(21), H1.dTS15s), 0)
+                                       End)
+                        End,0) <>
+                ISNULL(Case S.sProgram1d
+                       When 'P' Then 0
+                       When 'CE' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C.dOwnProHAP11an), 0)
+                                                           Else ISNULL(Convert(Numeric(21), C.dOwnHAP11t), 0)
+                                       End)
+                       When 'PV' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C.dOwnProHAP11an), 0)
+                                                           Else ISNULL(Convert(Numeric(21), C.dOwnHAP11t), 0)
+                                       End)
+                       When 'VO' Then (Case V.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),V.dOwnProHAP12ak), 0)
+                                                           Else ISNULL(Convert(Numeric(21), V.dOwnHAP12w), 0)
+                                       End)
+                       When 'MR' Then (Case M.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),M.dOwnProHAP13z), 0)
+                                                           Else ISNULL(Convert(Numeric(21), M.dOwnHAP13m), 0)
+                                       End)
+                       When 'H' Then (Case H.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),H.dProHAP15ae), 0)
+                                                          Else ISNULL(Convert(Numeric(21),H.dHAP15r), 0)
+                                      End)
+                  End,0) +
+                  ISNULL(Case S.Sprogram1d
+                         When 'P' Then (Case P.sRentType When 'F' Then ISNULL(Convert(Numeric(21), P.dFlatRent), 0)
+                                                         Else (Case P.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), P.dMixedTR10s), 0)
+                                                                                   Else ISNULL(Convert(Numeric(21), P.dTR10e), 0)
+                                                               End)
+                                        End)
+                         When 'CE' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C.dMixedTR11ak), 0)
+                                                             Else ISNULL(Convert(Numeric(21), C.dTR11s), 0)
+                                         End)
+                         When 'PV' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C.dMixedTR11ak), 0)
+                                                             Else ISNULL(Convert(Numeric(21), C.dTR11s), 0)
+                                         End)
+                         When 'VO' Then (Case V.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), V.dMixedTR12ai), 0)
+                                                             Else ISNULL(Convert(Numeric(21), V.dFamRent12x), 0)
+                                         End)
+                         When 'MR' Then (Case M.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), M.dMixedTR13x), 0)
+                                                             Else ISNULL(Convert(Numeric(21), M.dTR13k), 0)
+                                         End)
+                         When 'H' Then (Case H.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), H.dMixedTS15af), 0)
+                                                            Else ISNULL(Convert(Numeric(21), H.dTS15s), 0)
+                                        End)
+                    End,0) Then 'X' else '' end End CheckInterim,
+                Case When IsNull(S.sActionType2a, '') = '3' Then '(X) Interim change in family income, expenses, assets and composition.' + Char(13)+Char(10) Else '' End CheckInterimPara,
   							convert(varchar,S.dtEffective2b,101) dtEffective2b,
   							S.dtNextEffective2d,
   							S.sHAUse,
+                Ven.sFields0 LLName,
+                LTrim(RTrim(IsNull(Ven.sFields0, '') + ' ' + IsNull(Ven.sFields1, '')))
+  							+	Case When len(ltrim(IsNull(Ven.sFields2, '')))
+								+ len(ltrim(IsNull(Ven.sFields3, ''))) + len(ltrim(IsNull(Ven.sFields4, ''))) + len(ltrim(IsNull(Ven.sFields5, ''))) > 0 THEN char(13)+Char(10) ELSE '' END
+								+	Case When len(ltrim(IsNull(Ven.sFields2, ''))) > 0 Then ltrim(Ven.sFields2) + Char(13)+Char(10) Else '' End
+								+ CASE WHEN lTrim(IsNull(Ven.sFields3, '')) <> '' 	AND lTrim(IsNull(Ven.sFields4,'')) <> 	'' THEN	lTrim(IsNull(Ven.sFields3,'')) + ', ' + lTrim(IsNull(Ven.sFields4,'')) + ' ' + lTrim(IsNull(Ven.sFields5,''))
+						 		WHEN lTrim(IsNull(Ven.sFields3, '')) =  '' 	AND lTrim(IsNull(Ven.sFields4,'')) <> 	'' THEN	lTrim(IsNull(Ven.sFields4,'')) + ' ' + lTrim(IsNull(Ven.sFields5,''))
+						 		WHEN lTrim(IsNull(Ven.sFields3,'')) <> '' 	AND lTrim(IsNull(Ven.sFields4,'')) =  	'' AND	lTrim(IsNull(Ven.sFields5,'')) <> ''	THEN lTrim(IsNull(Ven.sFields3,'')) + ', ' + lTrim(IsNull(Ven.sFields5,''))
+								WHEN lTrim(IsNull(Ven.sFields3,'')) <> '' 	AND lTrim(IsNull(Ven.sFields4,'')) =  	'' AND	lTrim(IsNull(Ven.sFields5,'')) =	 '' THEN lTrim(IsNull(Ven.sFields3,''))
+								WHEN lTrim(IsNull(Ven.sFields3,'')) =  '' 	AND lTrim(IsNull(Ven.sFields4,'')) <> 	'' AND	lTrim(IsNull(Ven.sFields5,'')) =  '' THEN lTrim(IsNull(Ven.sFields4,''))
+								WHEN lTrim(IsNull(Ven.sFields3,'')) =  '' 	AND lTrim(IsNull(Ven.sFields4,'')) =  	'' AND	lTrim(IsNull(Ven.sFields5,'')) <> '' THEN lTrim(IsNull(Ven.sFields5,''))
+								WHEN lTrim(IsNull(Ven.sFields3,'')) =  '' 	AND lTrim(IsNull(Ven.sFields4,'')) =  	'' AND	lTrim(IsNull(Ven.sFields5,'')) =  '' THEN ''
+		        		END LLAddressLine,
   							T.sCode TSCode,
-  							LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, '')))+'^'
+                LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, ''))) TenName,
+  							LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, '')))
   							+	Case When len(ltrim(IsNull(T.sAddr1, ''))) + len(ltrim(IsNull(T.sAddr2, '')))
-								+ len(ltrim(IsNull(T.sCity, ''))) + len(ltrim(IsNull(T.sState, ''))) + len(ltrim(IsNull(T.sZipcode, ''))) > 0 THEN Char(10) ELSE '' END
-								+	Case When len(ltrim(IsNull(T.sAddr1, ''))) > 0 Then ltrim(T.sAddr1) + '^' Else '' End
-								+ Case When len(ltrim(IsNull(T.sAddr2, ''))) > 0 Then ltrim(T.sAddr2) + '^' Else '' End
+								+ len(ltrim(IsNull(T.sCity, ''))) + len(ltrim(IsNull(T.sState, ''))) + len(ltrim(IsNull(T.sZipcode, ''))) > 0 THEN char(13)+Char(10) ELSE '' END
+								+	Case When len(ltrim(IsNull(T.sAddr1, ''))) > 0 Then ltrim(T.sAddr1) + Char(13)+Char(10) Else '' End
+								+ Case When len(ltrim(IsNull(T.sAddr2, ''))) > 0 Then ltrim(T.sAddr2) + Char(13)+Char(10) Else '' End
 								+ CASE WHEN lTrim(IsNull(T.sCity, '')) <> '' 	AND lTrim(IsNull(T.sState,'')) <> 	'' THEN	lTrim(IsNull(T.sCity,'')) + ', ' + lTrim(IsNull(T.sState,'')) + ' ' + lTrim(IsNull(T.sZipcode,''))
 						 		WHEN lTrim(IsNull(T.sCity, '')) =  '' 	AND lTrim(IsNull(T.sState,'')) <> 	'' THEN	lTrim(IsNull(T.sState,'')) + ' ' + lTrim(IsNull(T.sZipcode,''))
 						 		WHEN lTrim(IsNull(T.sCity,'')) <> '' 	AND lTrim(IsNull(T.sState,'')) =  	'' AND	lTrim(IsNull(T.sZipcode,'')) <> ''	THEN lTrim(IsNull(T.sCity,'')) + ', ' + lTrim(IsNull(T.sZipcode,''))
@@ -99,13 +195,12 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 								WHEN lTrim(IsNull(T.sCity,'')) =  '' 	AND lTrim(IsNull(T.sState,'')) =  	'' AND	lTrim(IsNull(T.sZipcode,'')) <> '' THEN lTrim(IsNull(T.sZipcode,''))
 								WHEN lTrim(IsNull(T.sCity,'')) =  '' 	AND lTrim(IsNull(T.sState,'')) =  	'' AND	lTrim(IsNull(T.sZipcode,'')) =  '' THEN ''
 		        		END TenantAddressLine,
-		        		'The contract dated ' + isnull(CONVERT(VARCHAR(10), T.dtLeaseFrom, 101),'') + ', entered into between '
+		        		'The ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Assistance Payment' END + ' contract dated ' + isnull(CONVERT(VARCHAR(10), T.dtLeaseFrom, 101),'') + ', entered into between '
 							  + CASE WHEN ltrim(IsNull(S.sProgram1d, '')) IN ('P', 'H') THEN '' ELSE 'the Owner, '
 							  +	LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, '')))
 							  + ', and ' END
-							  + 'the PHA, ' + PHA.sAgencyName + ' and on behalf of the LESSEE (''FAMILY''), '
-							  + LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, ''))) + '(' + T.sCode + ') for the following described unit '
-							  + lTrim(rTrim(U.sCode)) + ' located at '
+							  + 'the PHA, ' + PHA.sAgencyName + ' and the LESSEE (''FAMILY''), '
+							  + LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, ''))) + ' for the following described unit located at '
 								+ rTrim(Case When len(ltrim(IsNull(A.sAddr1, ''))) > 0 Then ltrim(A.sAddr1)   Else '' End
 								+ Case When len(ltrim(IsNull(A.sAddr2, ''))) > 0 Then ', ' + ltrim(A.sAddr2)  Else '' End
 								+ CASE WHEN LEN(LTRIM(RTRIM(IsNull(A.sCity,'')))) > 0 THEN ', ' ELSE '' END
@@ -218,7 +313,87 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 									       When 'H' Then (Case H.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), H.dMixedTS15af), 0)
 									                                          Else ISNULL(Convert(Numeric(21), H.dTS15s), 0)
 									                      End)
-									  End,0) Then 'X' else ''  end ChkRentAdj,
+									  End,0) Then Char(13)+Char(10)+'(X) The Housing Authority approved changes in contract rent.' else ''  end ChkRentAdjPara,
+                    Case when ISNULL(Case Prev58.sProgram1d
+                          When 'P' Then 0
+                          When 'CE' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C1.dOwnProHAP11an), 0)
+                                                               Else ISNULL(Convert(Numeric(21), C1.dOwnHAP11t), 0)
+                                          End)
+                          When 'PV' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C1.dOwnProHAP11an), 0)
+                                                                Else ISNULL(Convert(Numeric(21), C1.dOwnHAP11t), 0)
+                                          End)
+                          When 'VO' Then (Case V1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),V1.dOwnProHAP12ak), 0)
+                                                                Else ISNULL(Convert(Numeric(21), V1.dOwnHAP12w), 0)
+                                          End)
+                          When 'MR' Then (Case M1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),M1.dOwnProHAP13z), 0)
+                                                               Else ISNULL(Convert(Numeric(21), M1.dOwnHAP13m), 0)
+                                          End)
+                          When 'H' Then (Case H1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),H1.dProHAP15ae), 0)
+                                                               Else ISNULL(Convert(Numeric(21), H1.dHAP15r), 0)
+                                          End)
+                    End,0) +
+                    ISNULL(Case Prev58.sProgram1d
+                            When 'P' Then (Case P1.sRentType When 'F' Then ISNULL(Convert(Numeric(21), P1.dFlatRent), 0)
+                                                             Else (Case P1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), P1.dMixedTR10s), 0)
+                                                                                        Else ISNULL(Convert(Numeric(21), P1.dTR10e), 0)
+                                                                  End)
+                                           End)
+                            When 'CE' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C1.dMixedTR11ak), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), C1.dTR11s), 0)
+                                           End)
+                            When 'PV' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C1.dMixedTR11ak), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), C1.dTR11s), 0)
+                                           End)
+                            When 'VO' Then (Case V1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), V1.dMixedTR12ai), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), V1.dFamRent12x), 0)
+                                           End)
+                            When 'MR' Then (Case M1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), M1.dMixedTR13x), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), M1.dTR13k), 0)
+                                           End)
+                            When 'H' Then (Case H1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), H1.dMixedTS15af), 0)
+                                                                Else ISNULL(Convert(Numeric(21), H1.dTS15s), 0)
+                                           End)
+                            End,0) <>
+                    ISNULL(Case S.sProgram1d
+                           When 'P' Then 0
+                           When 'CE' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C.dOwnProHAP11an), 0)
+                                                               Else ISNULL(Convert(Numeric(21), C.dOwnHAP11t), 0)
+                                           End)
+                           When 'PV' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C.dOwnProHAP11an), 0)
+                                                               Else ISNULL(Convert(Numeric(21), C.dOwnHAP11t), 0)
+                                           End)
+                           When 'VO' Then (Case V.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),V.dOwnProHAP12ak), 0)
+                                                               Else ISNULL(Convert(Numeric(21), V.dOwnHAP12w), 0)
+                                           End)
+                           When 'MR' Then (Case M.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),M.dOwnProHAP13z), 0)
+                                                               Else ISNULL(Convert(Numeric(21), M.dOwnHAP13m), 0)
+                                           End)
+                           When 'H' Then (Case H.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),H.dProHAP15ae), 0)
+                                                              Else ISNULL(Convert(Numeric(21),H.dHAP15r), 0)
+                                          End)
+                      End,0) +
+                      ISNULL(Case S.Sprogram1d
+                             When 'P' Then (Case P.sRentType When 'F' Then ISNULL(Convert(Numeric(21), P.dFlatRent), 0)
+                                                             Else (Case P.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), P.dMixedTR10s), 0)
+                                                                                       Else ISNULL(Convert(Numeric(21), P.dTR10e), 0)
+                                                                   End)
+                                            End)
+                             When 'CE' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C.dMixedTR11ak), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), C.dTR11s), 0)
+                                             End)
+                             When 'PV' Then (Case C.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), C.dMixedTR11ak), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), C.dTR11s), 0)
+                                             End)
+                             When 'VO' Then (Case V.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), V.dMixedTR12ai), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), V.dFamRent12x), 0)
+                                             End)
+                             When 'MR' Then (Case M.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), M.dMixedTR13x), 0)
+                                                                 Else ISNULL(Convert(Numeric(21), M.dTR13k), 0)
+                                             End)
+                             When 'H' Then (Case H.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), H.dMixedTS15af), 0)
+                                                                Else ISNULL(Convert(Numeric(21), H.dTS15s), 0)
+                                            End)
+                        End,0) Then 'X' else ''  end ChkRentAdj,
 									  Case when isnull(F.MemberName,'') = '' then ''
 									  else 'X' end ChkFamComp,
 									  Case when isnull(F.MemberName,'') = '' then ''
@@ -234,11 +409,10 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
   									LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, ''))) OwnerName,
   									LTrim(RTrim(IsNull(CW.sFirstName, '') + ' ' + IsNull(CW.uLastName, ''))) CaseWorkerName,
   									LTRIM(CASE WHEN len(ltrim(IsNull(E.sUser1, ''))) > 0 THEN '' + Left(LTrim(E.sUser1),3) + ') ' + SubString(LTrim(E.sUser1),4,3) + '-' + Right(LTrim(E.sUser1),4) Else '' END) CWPhone,
-									  'This change to the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + ' will be effective from '
-									  + CONVERT(VARCHAR(10), S.dtEffective2b, 101) +'.  The next reexamination is due on '
-									  + CONVERT(VARCHAR(10), S.DTNEXTEFFECTIVE2D, 101) + '.' + Char(10) + Char(10)
-									  +'This change is presented to you in accordance with the terms and conditions of the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + ' and shall be attached to and made a part of your ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + '.  All other covenants, terms and conditions of the original '
-									  + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Voucher Contract' END + ' remain the same.' LeaseAmendmentPara,
+									  'This change to the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' is effective ' ContractDateText,
+									  CONVERT(VARCHAR(10), S.dtEffective2b, 101) + '.' + Char(10) + Char(10) EffectiveDate3,
+									  'This change is presented to you in accordance with the terms and conditions of the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' and shall be attached to and made a part of your ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + '.  All other covenants, terms and conditions of the original '
+									  + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' remain the same.' LeaseAmendmentPara,
 									  S.hMy _KEY_,
   									'FamMem' _GRID_0,
   									'Pays' _GRID_1,
@@ -263,6 +437,7 @@ From H8Param PHA,
   Left Join H8ModReh M1 On Prev58.hMy = M1.hSum
   Left Join H8HomeOwnership H1 On Prev58.hMy = H1.hSum
   Left Join Person O On (O.hMy = s.hVendor and O.iPersonType = 5)
+  Left Join Vendor Ven On Ven.hMyPerson = S.hVendor
   Left Join Person CW On (CW.hMy = S.hCaseWorker and CW.IPersonType = 79)
   Left Join PrEmployee E On E.hMyPerson = CW.hMy
   Left Join (Select Distinct 'Newly Added Member' ChangeDesc,
@@ -1036,7 +1211,7 @@ Where S.hTenant = T.hMyPerson
 
 //GRID Header
 select case when isnull(convert(varchar ,p.PayFromAmt1),'') = '' then '' else 'From' end hfrom,
-		case when isnull(convert(varchar,p.PayFromAmt1),'') = '' then '' else 'TO' end  hto
+		case when isnull(convert(varchar,p.PayFromAmt1),'') = '' then '' else 'To' end  hto
 from(SELECT 1 Sort, Case When IsNull(Amt.Prev58hMy, 0) = 0 then 0
 		when ( PayFromAmt1 = PayToAmt1
 			And PayFromAmt2 = PayToAmt2
