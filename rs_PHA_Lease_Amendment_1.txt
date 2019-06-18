@@ -63,9 +63,15 @@ From (Select MAX (isnull(S.sCerts, '')) scerts
          Group By S.hTenant) A
 Where sCerts <> ''
 //End Command
-
+CASE
+  WHEN t.sfields0 = 'Spanish' THEN 'y_RFD_spanish_main_RSC.docx'
+  ELSE 'y_RFD_english_main_RSC.docx'
+END                                         _FILE_,
 //Select Primary
-Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
+Select Distinct CASE
+  WHEN t.sfields0 = 'Spanish' THEN ''y_PHA_Lease_Amendment_Spanish.docx''
+  ELSE ''y_PHA_Lease_Amendment.docx''
+END                                         _FILE_,
 '\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'
                 headerImage,
                 rsc.chairperson                             chairperson,
@@ -171,7 +177,15 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
                                                             Else ISNULL(Convert(Numeric(21), H.dTS15s), 0)
                                         End)
                     End,0) Then 'X' else '' end End CheckInterim,
-                Case When IsNull(S.sActionType2a, '') = '3' Then '(X) Interim change in family income, expenses, assets and composition.' + Char(13)+Char(10) Else '' End CheckInterimPara,
+                Case When IsNull(S.sActionType2a, '') = '3' Then
+                CASE
+                  WHEN t.sfields0 = 'Spanish' THEN
+                  '(X) Cambio interino en el ingreso familiar, gastos, activos y composición..'
+                  ELSE
+                  '(X) Interim change in family income, expenses, assets and composition.'
+                  END
+                  + Char(13)+Char(10)
+                  Else '' End CheckInterimPara,
   							convert(varchar,S.dtEffective2b,101) dtEffective2b,
   							S.dtNextEffective2d,
   							S.sHAUse,
@@ -203,6 +217,26 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 								WHEN lTrim(IsNull(T.sCity,'')) =  '' 	AND lTrim(IsNull(T.sState,'')) =  	'' AND	lTrim(IsNull(T.sZipcode,'')) <> '' THEN lTrim(IsNull(T.sZipcode,''))
 								WHEN lTrim(IsNull(T.sCity,'')) =  '' 	AND lTrim(IsNull(T.sState,'')) =  	'' AND	lTrim(IsNull(T.sZipcode,'')) =  '' THEN ''
 		        		END TenantAddressLine,
+                CASE
+                  WHEN t.sfields0 = 'Spanish' THEN
+                  'El ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'contrato de arrendamiento' ELSE 'contrato de Pago de Asistencia' END + ' para Vivienda fechado ' + isnull(CONVERT(VARCHAR(10), T.dtLeaseFrom, 101),'') + ', entre el Propietario '
+  							  + CASE WHEN ltrim(IsNull(S.sProgram1d, '')) IN ('P', 'H') THEN '' ELSE 'el propietario, '
+  							  +	LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, '')))
+  							  + ', y ' END
+  							  + 'el PHA, ' + PHA.sAgencyName + ' y el arrendatario (“FAMILIA”), '
+  							  + LTrim(RTrim(IsNull(T.sFirstName, '') + ' ' + IsNull(T.sLastName, ''))) + ' por la unidad ubicada en '
+  								+ rTrim(Case When len(ltrim(IsNull(A.sAddr1, ''))) > 0 Then ltrim(A.sAddr1)   Else '' End
+  								+ Case When len(ltrim(IsNull(A.sAddr2, ''))) > 0 Then ', ' + ltrim(A.sAddr2)  Else '' End
+  								+ CASE WHEN LEN(LTRIM(RTRIM(IsNull(A.sCity,'')))) > 0 THEN ', ' ELSE '' END
+  								+ CASE WHEN lTrim(IsNull(A.sCity, '')) <> '' 	AND lTrim(IsNull(A.sState,'')) <> 	'' THEN	lTrim(IsNull(A.sCity,'')) + ', ' + lTrim(IsNull(A.sState,'')) + ' ' + lTrim(IsNull(A.sZipcode,''))
+  					     	WHEN lTrim(IsNull(A.sCity, '')) =  '' 	AND lTrim(IsNull(A.sState,'')) <> 	'' THEN	lTrim(IsNull(A.sState,'')) + ' ' + lTrim(IsNull(A.sZipcode,''))
+  					    	WHEN lTrim(IsNull(A.sCity,'')) <> '' 	AND lTrim(IsNull(A.sState,'')) =  	'' AND	lTrim(IsNull(A.sZipcode,'')) <> ''	THEN lTrim(IsNull(A.sCity,'')) + ', ' + lTrim(IsNull(A.sZipcode,''))
+  								WHEN lTrim(IsNull(A.sCity,'')) <> '' 	AND lTrim(IsNull(A.sState,'')) =  	'' AND	lTrim(IsNull(A.sZipcode,'')) =	 '' THEN lTrim(IsNull(A.sCity,''))
+  								WHEN lTrim(IsNull(A.sCity,'')) =  '' 	AND lTrim(IsNull(A.sState,'')) <> 	'' AND	lTrim(IsNull(A.sZipcode,'')) =  '' THEN lTrim(IsNull(A.sState,''))
+  								WHEN lTrim(IsNull(A.sCity,'')) =  '' 	AND lTrim(IsNull(A.sState,'')) =  	'' AND	lTrim(IsNull(A.sZipcode,'')) <> '' THEN lTrim(IsNull(A.sZipcode,''))
+  								WHEN lTrim(IsNull(A.sCity,'')) =  '' 	AND lTrim(IsNull(A.sState,'')) =  	'' AND	lTrim(IsNull(A.sZipcode,'')) =  '' THEN ''
+  							  END) + ' se enmienda de la siguiente manera:'
+                  ELSE
 		        		'The ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'Housing Assistance Payment' END + ' contract dated ' + isnull(CONVERT(VARCHAR(10), T.dtLeaseFrom, 101),'') + ', entered into between '
 							  + CASE WHEN ltrim(IsNull(S.sProgram1d, '')) IN ('P', 'H') THEN '' ELSE 'the Owner, '
 							  +	LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, '')))
@@ -219,7 +253,8 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 								WHEN lTrim(IsNull(A.sCity,'')) =  '' 	AND lTrim(IsNull(A.sState,'')) <> 	'' AND	lTrim(IsNull(A.sZipcode,'')) =  '' THEN lTrim(IsNull(A.sState,''))
 								WHEN lTrim(IsNull(A.sCity,'')) =  '' 	AND lTrim(IsNull(A.sState,'')) =  	'' AND	lTrim(IsNull(A.sZipcode,'')) <> '' THEN lTrim(IsNull(A.sZipcode,''))
 								WHEN lTrim(IsNull(A.sCity,'')) =  '' 	AND lTrim(IsNull(A.sState,'')) =  	'' AND	lTrim(IsNull(A.sZipcode,'')) =  '' THEN ''
-							  END) + ' is amended as follows:'  LeaseAmendmentLine,
+							  END) + ' is amended as follows:'
+                END LeaseAmendmentLine,
   							U.iBedRooms,
   							T.sPhoneNum1,
   							T.dtLeaseFrom LeaseEff,
@@ -321,7 +356,14 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
 									       When 'H' Then (Case H.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21), H.dMixedTS15af), 0)
 									                                          Else ISNULL(Convert(Numeric(21), H.dTS15s), 0)
 									                      End)
-									  End,0) Then Char(13)+Char(10)+'(X) The Housing Authority approved changes in contract rent.' else ''  end ChkRentAdjPara,
+									  End,0) Then Char(13)+Char(10)+'(X) '+
+                    CASE
+                      WHEN t.sfields0 = 'Spanish' THEN
+                      'La Autoridad de Vivienda aprobó cambios al contrato de renta.'
+                      ELSE
+                      'The Housing Authority approved changes in contract rent.'
+                      END
+                      else ''  end ChkRentAdjPara,
                     Case when ISNULL(Case Prev58.sProgram1d
                           When 'P' Then 0
                           When 'CE' Then (Case C1.bFullSubsidy When 0 Then ISNULL(Convert(Numeric(21),C1.dOwnProHAP11an), 0)
@@ -417,10 +459,21 @@ Select Distinct 'y_PHA_Lease_Amendment.docx' _FILE_,
   									LTrim(RTrim(IsNull(O.sFirstName, '') + ' ' + IsNull(O.uLastName, ''))) OwnerName,
   									LTrim(RTrim(IsNull(CW.sFirstName, '') + ' ' + IsNull(CW.uLastName, ''))) CaseWorkerName,
   									LTRIM(CASE WHEN len(ltrim(IsNull(E.sUser1, ''))) > 0 THEN '' + Left(LTrim(E.sUser1),3) + ') ' + SubString(LTrim(E.sUser1),4,3) + '-' + Right(LTrim(E.sUser1),4) Else '' END) CWPhone,
-									  'This change to the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' is effective ' ContractDateText,
+                    CASE
+                      WHEN t.sfields0 = 'Spanish' THEN
+                      'Este cambio al Contrato ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'de arrendamiento' ELSE 'HAP' END + ' entra en vigor el '
+                      Else
+                      'This change to the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' is effective '
+                      END ContractDateText,
 									  CONVERT(VARCHAR(10), S.dtEffective2b, 101) + '.' + Char(10) + Char(10) EffectiveDate3,
+                    CASE
+                      WHEN t.sfields0 = 'Spanish' THEN
+                      'Este cambio se le presenta a Ud. de acuerdo con los términos y condiciones del Contrato ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'de arrendamiento' ELSE 'HAP' END + ' y se adjuntará y se integrará a su Contrato ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'de arrendamiento' ELSE 'HAP' END + '.  Todos los demás convenios y condiciones del Contrato '
+  									  + CASE WHEN S.SPROGRAM1D = 'P' THEN 'de arrendamiento' ELSE 'HAP' END + ' original permanecen iguales.'
+                      ELSE
 									  'This change is presented to you in accordance with the terms and conditions of the ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' and shall be attached to and made a part of your ' + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + '.  All other covenants, terms and conditions of the original '
-									  + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' remain the same.' LeaseAmendmentPara,
+									  + CASE WHEN S.SPROGRAM1D = 'P' THEN 'Lease Agreement' ELSE 'HAP Contract' END + ' remain the same.'
+                    END LeaseAmendmentPara,
 									  S.hMy _KEY_,
   									'FamMem' _GRID_0,
   									'Pays' _GRID_1,
@@ -1219,8 +1272,10 @@ Where S.hTenant = T.hMyPerson
 //End Select
 
 //GRID Header
-select case when isnull(convert(varchar ,p.PayFromAmt1),'') = '' then '' else 'From' end hfrom,
-		case when isnull(convert(varchar,p.PayFromAmt1),'') = '' then '' else 'To' end  hto
+select case when isnull(convert(varchar ,p.PayFromAmt1),'') = '' then '' else CASE
+  WHEN t.sfields0 = 'Spanish' THEN 'De' else 'From' end end hfrom,
+		case when isnull(convert(varchar,p.PayFromAmt1),'') = '' then '' else CASE
+      WHEN t.sfields0 = 'Spanish' THEN 'A' else 'To' end end  hto
 from(SELECT 1 Sort, Case When IsNull(Amt.Prev58hMy, 0) = 0 then 0
 		when ( PayFromAmt1 = PayToAmt1
 			And PayFromAmt2 = PayToAmt2
