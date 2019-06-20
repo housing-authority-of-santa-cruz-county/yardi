@@ -1,0 +1,68 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_ial_initial_appointment.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    06/20/2019 - Created by jonathan
+    06/20/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+//End Options
+
+//Title
+IAL Initial Appointment
+//End Title
+
+//Select Primary
+ SELECT  'y_IAL_INITIAL_APPOINTMENT.docx' _FILE_
+                  ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'AppDate'
+              , '#FillText11#' 'AppTime'
+              , WLTen.sFirstName + ' ' + WLTen.sLastName 'AppName'
+              , case when isnull(WLTen.saddr1, '') <> '' then ltrim(rtrim(WLTen.saddr1)) + '^' else '' end + case when isnull(WLTen.saddr2, '') <> '' then ltrim(rtrim(WLTen.saddr2)) + '^' else '' end + case when isnull(WLTen.sCity, '') <> '' then ltrim(rtrim(WLTen.sCity)) else '' end + case when isnull(WLTen.sState, '') = '' and isnull(WLTen.sZipCode, '') = '' then ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) else ', ' + ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) end 'AppAddress'
+              , WLTen.scode 'AppTenCode'
+              , GETDATE() 'LetterDate'
+              , p.sCode 'PropCode'
+              , tenant.sCode 'TenCode'
+ FROM  Property p  INNER JOIN Tenant ON (p.hMy = tenant.hProperty)
+ INNER JOIN wlapplic wla ON (wla.htenant = tenant.hmyperson)
+ INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+ cross join board_commishes_footer_RSC rsc 
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  GetDate()  ASC
+//End Select Primary
+
+//Format
+AppDate MMMM DD, YYYY
+LetterDate MMMM DD, YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,A    ,"FillDate11"    ,"Appointment Date"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText11"    ,"Appointment Time"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"Field110"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field110#') ",     ,Y    ,   ,Y
+//End Filter
