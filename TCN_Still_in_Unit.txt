@@ -1,6 +1,7 @@
 //Vista
 
 //Notes
+   IMPORTANT:  This file is deprecated - has been replaced by adhocs_tcn_still_in_unit.txt
   Copyright (c) 2003 by Yardi Systems
   NAME
     adhocs_TCN_Still_in_Unit.txt
