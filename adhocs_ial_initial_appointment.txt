@@ -66,6 +66,6 @@ LetterDate MMMM DD, YYYY
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
 0    ,A    ,"FillDate11"    ,"Appointment Date"    ,  ,""    ,"",     ,N    ,   ,Y
 0    ,T    ,"FillText11"    ,"Appointment Time"    ,  ,""    ,"",     ,N    ,   ,Y
-L    ,T    ,"FillText12"    ,"Appointment Location"    ,  ,"2160 41st Ave, Capitola^211 5th Street Hollister^Home Visit"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText12"    ,"Appointment Location"    ,  ,"2160 41st Ave, Capitola^211 5th Street, Hollister^Home Visit"    ,"",     ,N    ,   ,Y
 0    ,T    ,"Field110"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field110#') ",     ,Y    ,   ,Y
 //End Filter
