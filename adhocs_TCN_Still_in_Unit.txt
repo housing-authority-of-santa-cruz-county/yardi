@@ -11,7 +11,7 @@
     For more history, see deprecated file tcn_still_in_unit.txt
   MODIFIED
     05/21/2019 - Created by jonathan
-    06/25/2019 - Last Modified by jonathan
+    06/26/2019 - Last Modified by jonathan
 //End Notes
 
 //Database
@@ -27,7 +27,7 @@ TCN Still in Unit
 //End Title
 
 //Select Primary
- SELECT  'y_TCN_Still_in_Unit.docx' _FILE_
+ SELECT top 1  'y_TCN_Still_in_Unit.docx' _FILE_
  ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                  rsc.chairperson                             chairperson,
                  rsc.viceChairperson                         viceChairperson,
@@ -55,7 +55,7 @@ FROM VENDOR v INNER JOIN Person o on o.hmy = v.hMyPerson AND o.iPersonType=5
  cross join board_commishes_footer_RSC rsc
  WHERE 1 = 1
  #conditions#
- ORDER BY  tenant.sCode ASC
+ ORDER BY Review58SUMM.dteffective2b DESC
 //End Select Primary
 
 //Format
