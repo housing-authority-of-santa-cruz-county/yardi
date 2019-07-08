@@ -181,6 +181,15 @@ SELECT
   ,'FailedItems_sub'                                                                   _SUB_0
   ,'FailedItems' 									 																							        _GRID_0
 ,S.hStpr
+,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                rsc.chairperson                             chairperson,
+                rsc.viceChairperson                         viceChairperson,
+                rsc.boardmember1                            boardmember1,
+                rsc.boardmember2                            boardmember2,
+                rsc.boardmember3                            boardmember3,
+                rsc.boardmember4                            boardmember4,
+                rsc.boardmember5                            boardmember5,
+                rsc.execDirector                            execDirector
   ,ISNULL(H8SP.sAgencyName, ISNULL(PHA.sAgencyName,'')) PHAsAgencyName
 	,ISNULL(H8SP.sAddr1, ISNULL(PHA.sAddr1,'')) PHAsAddr1
 	,ISNULL(H8SP.sAddr2, ISNULL(PHA.sAddr2,'')) PHAsAddr2
@@ -405,7 +414,7 @@ SELECT
 + case len(isnull(H8SP.sURL,'')) when 0 then
        case  LEN(ISNULL(PHA.sURL,'')) when  0 then '' else '^'+'Web: '+PHA.sURL end
        else '^'+'Web: '+H8SP.sURL end  Contactdetail
-  ,case when len(Isnull(I.sSeverity,''))=0 then '' else  'The inspection failed because of'+Isnull(I.sSeverity,'')+'.' end   sSeverityToken
+  ,case when len(Isnull(I.sSeverity,''))=0 then '' else  'The inspection failed because of '+Isnull(I.sSeverity,'')+'.' end   sSeverityToken
   ,'Please refer to the next page for failed items which need to be corrected or repaired' failedItemToken
   ,case when len(Isnull(temp_Notes.Detail_Notes,''))= 0 then '' else temp_Notes.Detail_Notes end DetailFailedNotes
   ,I.hmy 																												                  _KEY_
@@ -428,6 +437,7 @@ SELECT
      LEFT JOIN H8Stpr H8SP ON H8SP.hMy = S.hStpr
      LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
 	 left join (select ci.sdatemask from country_info ci, pmuser pm where ISNULL(NULLIF(ltrim(rtrim(pm.scountry)) ,''),'us') = ltrim(rtrim(ci.scode)) and ltrim(rtrim(pm.uname)) = ltrim(rtrim( '#@@USERNAME#' ))) usersetting on 1=1
+     cross join board_commishes_footer_RSC rsc
      LEFT  JOIN (
 						select
 							I1.hMy hInspection,
