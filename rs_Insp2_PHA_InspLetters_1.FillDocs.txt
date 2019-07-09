@@ -166,7 +166,8 @@ Order by t1.iTreeOrder
 
 //Select PRIMARY
 SELECT
-  case when '#RptType#' ='Schedule' and '#Notes#'= 'No'                                then  'y_Insp2_PHA_InspLetters_Scheduled.docx'
+  case when '#RptType#' ='Schedule' and '#Notes#'= 'No'  and P.sCode not in ('100','781','682','610','620')  then  'y_Insp2_PHA_InspLetters_Scheduled_100.docx'
+  when      '#RptType#' ='Schedule' and '#Notes#'= 'No'  and P.sCode in ('100','781','682','610','620')  then  'y_Insp2_PHA_InspLetters_Scheduled.docx'
   when      '#RptType#' ='Result'   and '#Notes#'= 'No'  and I.sStatus='Pass'          then  'y_Insp2_PHA_InspLetters_Pass.docx'
   when      '#RptType#' ='Result'   and '#Notes#'= 'Yes' and I.sStatus='Pass'          then  'y_Insp2_PHA_InspLetters_Pass_Notes.docx'
   when      '#RptType#' ='Result'   and '#Notes#'= 'No'  and I.sStatus='Fail'          then  'y_Insp2_PHA_InspLetters_Fail.docx'
@@ -332,6 +333,17 @@ SELECT
   ,case when Tenant_Landlord.Tenant_Landlord= 0 then Ltrim(Isnull(T.sFirstName,'')+' '+ IsNull(T.sLastName,''))
   when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(O.sFirstName,'')+' '+ IsNull(O.uLastName,''))
   else  '' end  ToName,
+  case when Tenant_Landlord.Tenant_Landlord= 0 then 'Unit Inspection Appointment'
+  when Tenant_Landlord.Tenant_Landlord= 1 then 'Notification of Unit Inspection'
+  else '' end LetterHead,
+  case when Tenant_Landlord.Tenant_Landlord= 0 then 'Our agency has scheduled an inspection of the ' + Case I.iType when 3 then 'Property' when 4 then 'Unit' when 567 then 'Room' when 28 then 'Asset' End + ' located at:'
+  when Tenant_Landlord.Tenant_Landlord= 1 then 'An appointment for an Annual Inspection is schedule for your unit on ' + convert(varchar, I.dtScheduled, 1) + ' between '  + case when LTRIM( RIGHT(Convert(Varchar(20),I.dtScheduled,100),2)) = 'AM' Then '7:30am and 12:00pm' Else '12:30pm and 5:30pm' end + '.' +char(13)+char(10)+char(13)+char(10)+ convert(varchar, GetDate(), 1)+char(13)+char(10)+Ltrim(Isnull(T.sFirstName,'')+' '+ IsNull(T.sLastName,''))
+  else '' end OpenPara,
+  case when Tenant_Landlord.Tenant_Landlord= 0 then 'The inspection will be conducted on '+ convert(varchar, I.dtScheduled, 1) + ' between '  + case when LTRIM( RIGHT(Convert(Varchar(20),I.dtScheduled,100),2)) = 'AM' Then '7:30am and 12:00pm' Else '12:30pm and 5:30pm' end + '.  It should take about ' + case when I.iDuration=0 then '15' else Convert(Varchar,I.iDuration) end + ' minutes to complete the inspection.'+char(13)+char(10)+char(13)+char(10)+'It is required that you (or a tenant designated representative over 18 years of age) be home for the inspection at the above scheduled time. Please take time before the inspection to ensure that all necessary repairs are made and that all smoke detectors are in place and working.'+char(13)+char(10) +char(13)+char(10)+
+  'It is suggested that owner or manager attend the inspection to insure any needed repairs are made promptly.'+char(13)+char(10)+char(13)+char(10)+
+  'The Housing Choice Voucher Program requires that an inspection take place at least every 12 -24 months. Failure to abide by this requirement could result in your voucher being terminated. If you have any additional questions concerning your inspection, please call us at (831) 454-5977.'
+  when Tenant_Landlord.Tenant_Landlord= 1 then 'The owner/manager is encouraged to inspect the unit and make repairs prior to the inspection. Continued subsidy is conditional upon maintaining your unit to HUD Housing Quality Standards (HQS). If the unit is out of compliance upon inspection, a strict time frame for making repairs applies. If repairs are not completed on time, the Housing Authority must stop your rent payments until repairs are made. There can be no retroactive rent payments and the unit may be terminated from the program.'
+  else '' end EndPara,
   GETDATE()  LetterDate,
   I.dtScheduled dtScheduledDate,
   LTRIM( RIGHT(Convert(Varchar(20),I.dtScheduled,100),7)) dtScheduledTime,
