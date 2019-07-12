@@ -178,7 +178,8 @@ SELECT
   When      '#RptType#' ='Result'   and '#Notes#'= 'yes' and I.sStatus='Cancel'        then  'y_Insp2_PHA_InspLetters_Canceled_Notes.docx'
   Else 'y_Insp2_PHA_Letter_Inconclusive_Notes.docx'
   end                                                                                   _FILE_NL1
-  ,case  when  '#RptType#' ='Result' then 'y_Insp2_PHA_InspLetters_Failed_Items.docx' end   _FILE_NL2
+  ,case  when  '#RptType#' ='Result' AND I.sStatus NOT IN ('Pass') then 'y_Insp2_PHA_InspLetters_Failed_Items.docx' end   _FILE_NL2
+  ,case  when  '#RptType#' ='Result' AND I.sSecondaryStatus in ('Fail Landlord Cert') then 'y_Insp2_PHA_InspLetters_Self_Certify.docx' end   _FILE_NL3
   ,'FailedItems_sub'                                                                   _SUB_0
   ,'FailedItems' 									 																							        _GRID_0
 ,S.hStpr
@@ -225,6 +226,9 @@ SELECT
 		else    Convert(varchar(11), i.dtInspected,101)
   end  + ' ' + Case when DATEPART(hour,i.dtInspected)>0 OR DATEPART(MINUTE ,i.dtInspected)>0 THEN Right( '0'+ LTRIM(RIGHT(CONVERT(VARCHAR,i.dtInspected,100 ),7)),7)  ELSE '' END ) dtInspected,
   I.sStatus,
+  I.sSecondaryStatus,
+  case when I.sSecondaryStatus in ('Fail Landlord Cert') then 'The landlord must self-certify that the repairs have been made prior to this date: '+ convert(varchar, I.dtActionDue, 1) +'. If the Housing Authority doesn’t receive the self-certification for all repairs by the due date, the Housing Authority must abate Housing Assistance Payments (HAP) beginning on that day. Your landlord will self-certify that all repairs have been made.'
+  else 'A “pass” inspection must be obtained by '+ convert(varchar, I.dtActionDue, 1) +'. It is suggested, but not required, that items indicated as “pass with comment” be corrected to prevent them from failing in the future.'+char(10)+char(13)+char(10)+char(13)+'Please make all required repairs. Once the corrections have been made, please contact our office to schedule a re-inspection (831) 454-5977 Make sure an inspection can be arranged within the 30 days. Landlords, housing assistance payments must stop if your unit doesn’t pass inspection by the 30-day due date.' END CertPara,
   Isnull(I.sSeverity,'') sSeverity,
   case when len(I.sSeverity)> 0 and Isnull(I.sSeverity,'') <> '' then 1 else 0 end sSeveritylength,
   I.dtNotified,
@@ -319,6 +323,9 @@ SELECT
   O.hMy OwnHMy,
   O.uLastName OwnLName,
   O.sFirstName OwnFName,
+  case when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(T.sFirstName,'')+' '+ IsNull(T.sLastName,''))
+  when Tenant_Landlord.Tenant_Landlord= 0 then 'Landlord: ' + LTrim(RTrim(IsNull(O.sFirstName, '') + CASE When IsNull(O.sFirstName, '') = IsNull(O.uLastName, '') Then '' Else ' ' + IsNull(O.uLastName, '') END))
+  else  '' end  LLName,
   O.sAddr1 OAdd1,
   O.sAddr2 OAdd2,
   O.sCity OCity,
