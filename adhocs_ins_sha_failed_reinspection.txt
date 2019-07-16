@@ -43,7 +43,7 @@ INS SHA Failed Re-Inspection
               , DATEADD(week, 5, INSP.dtInspected) 'PassDate'
               , UAddr.sAddr1 'HHAddress1'
               , case when isnull(UnitOwnerperson.saddr1, '') <> '' then ltrim(rtrim(UnitOwnerperson.saddr1))  + char(13)+char(10) else '' end + case when isnull(UnitOwnerperson.saddr2, '') <> '' then ltrim(rtrim(UnitOwnerperson.saddr2))  + char(13)+char(10) else '' end + case when isnull(UnitOwnerperson.sCity, '') <> '' then ltrim(rtrim(UnitOwnerperson.sCity)) else '' end + case when isnull(UnitOwnerperson.sState, '') = '' and isnull(UnitOwnerperson.sZipCode, '') = '' then ltrim(rtrim(UnitOwnerperson.sState)) + ' ' + ltrim(rtrim(UnitOwnerperson.SZIPCODE)) else ', ' + ltrim(rtrim(UnitOwnerperson.sState)) + ' ' + ltrim(rtrim(UnitOwnerperson.SZIPCODE)) end 'HHAddress'
-              , UnitOwner.uLastName 'HHName'
+              , LTrim(RTrim(IsNull(UnitOwnerperson.sFirstName, '') + CASE When IsNull(UnitOwnerperson.sFirstName, '') = IsNull(UnitOwnerperson.uLastName, '') Then '' Else ' ' + IsNull(UnitOwnerperson.uLastName, '') END)) HHName
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
  INNER JOIN H8Unit  ON (Unit.hMy = H8Unit.hUnit)
  LEFT JOIN Vendor UnitOwner ON (UnitOwner.hMyPerson = H8Unit.hVendor)
