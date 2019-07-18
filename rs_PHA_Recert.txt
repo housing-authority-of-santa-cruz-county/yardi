@@ -61,6 +61,7 @@ Select case When '#RptType#' = 'Tenant Letter' AND t.sfields0 <> 'Spanish' then 
 						When '#RptType#' = 'Tenant Letter' AND t.sfields0 = 'Spanish' then 'y_PHA_Recert_Tenant_Letter_Spanish.docx'
 						When '#RptType#' = 'Owner Letter' then 'y_PHA_Recert_Owner_Letter.docx'	 end  _FILE_NL1,
         case When '#RptType#' = 'Tenant Letter' AND t.sfields0 = 'Spanish' then 'y_PHA_Recert_Tenant_Letter.docx' end _FILE_NL2,
+        case When t.sfields0 <> 'Spanish' then 'y_PHA_Recert_Tenant_Letter_Cover.docx' else 'y_PHA_Recert_Tenant_Letter_Cover_Spanish.docx' end  _FILE_NL3,
             '\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                             rsc.chairperson                             chairperson,
                             rsc.viceChairperson                         viceChairperson,
@@ -195,6 +196,8 @@ Select case When '#RptType#' = 'Tenant Letter' AND t.sfields0 <> 'Spanish' then 
        St.Status,
        Case When rtrim(rtrim(E.sFirstName) + ' ' + rtrim(E.uLastName))='' Then 'us' else rtrim(rtrim(E.sFirstName) + ' ' + rtrim(E.uLastName)) End
         Caseworker
+       , LEFT(E.sFirstName,1)+LEFT(E.uLastName,1) CWInit
+       , RIGHT(T.sFedid,4) ss4
        ,CASE WHEN '#SortOrd#' = 'Tenant Name' THEN ''
 			 WHEN '#SortOrd#' = 'Tenant Code' THEN ''
 			 WHEN '#SortOrd#' = 'Program' THEN
@@ -375,6 +378,8 @@ Select case When '#RptType#' = 'Tenant Letter' AND t.sfields0 <> 'Spanish' then 
 			      CASE WHEN PHA.sEmail= '' THEN '' ELSE 'E-mail: ' + PHA.sEmail END +  CASE WHEN PHA.sEmail= '' OR PHA.sURL=''  THEN '' ELSE '   *   ' END + CASE WHEN PHA.sURL= '' THEN '' ELSE 'Web: ' +  PHA.sURL END
 			      AgencyEmail,
 			      LEFT(CAST (GETDATE() AS Varchar),6)+ ', ' + CAST(YEAR(GETDATE())as VARCHAR) LetterDate,
+            GETDATE() LetterDateS,
+                  CAST(MONTH(S.dtEffective2b) as VARCHAR)+'/'+ CAST(YEAR(S.dtEffective2b)as VARCHAR) LetterDateShort,
                   Convert(varchar(8),Dateadd(d,10,getdate()),1) daysplus10,
                   Convert(varchar(8),Dateadd(d,20,getdate()),1) daysPlus20,
                   Convert(varchar(8),Dateadd(d,20,getdate()),3) daysPlus20S,
@@ -570,6 +575,8 @@ AgencyAddressLine Multiline
 TenAddressLine Multiline
 OwnAddressLine Multiline
 LetterDate MMM DD, YYYY
+LetterDateS DD/MM/YYYY
+LetterDateShort MM/YY
 dtNextEffective MM/DD/YYYY
 daysplus10 MM/DD/YYYY
 daysplus20 MM/DD/YYYY
