@@ -54,13 +54,13 @@ MLA
               , UAddr.sState 'State'
               , UAddr.sZipCode 'Zip'
               , unit.ibedrooms 'UnitBedrooms'
-              , CASE WHEN unit.ibedrooms = 1 Then '#FillText11#'
-                     WHEN unit.ibedrooms = 2 Then '#FillText12#'
-                     else '#FillText13#' END 'Rate'
+              , CASE WHEN unit.ibedrooms = 1 Then CAST('#FillText11#' as float)
+                     WHEN unit.ibedrooms = 2 Then CAST('#FillText12#' as float)
+                     else cast('#FillText13#' as float) END 'Rate'
               , GETDATE() 'LetterDate'
-              ,  DATEDIFF(DAY, '#FillDate11#', '#FillDate12#')*CASE WHEN unit.ibedrooms = 1 Then '#FillText11#'
-                     WHEN unit.ibedrooms = 2 Then '#FillText12#'
-                     else '#FillText13#' END 'total'
+              ,  DATEDIFF(DAY, '#FillDate11#', '#FillDate12#')*CASE WHEN unit.ibedrooms = 1 Then cast('#FillText11#' as float)
+                     WHEN unit.ibedrooms = 2 Then cast('#FillText12#' as float)
+                     else cast('#FillText13#' as float) END 'total'
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
  LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
@@ -77,8 +77,8 @@ ToDate MM/DD/YYYY
 FromDateS DD/MM/YYYY
 ToDateS DD/MM/YYYY
 LetterDate MM/DD/YYYY
-Rate $###,##0
-total $###,##0
+Rate $###.#0
+total $###.#0
 //End Format
 
 //Filter
