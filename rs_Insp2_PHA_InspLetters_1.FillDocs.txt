@@ -178,8 +178,8 @@ SELECT
   When      '#RptType#' ='Result'   and '#Notes#'= 'yes' and I.sStatus='Cancel'        then  'y_Insp2_PHA_InspLetters_Canceled_Notes.docx'
   Else 'y_Insp2_PHA_Letter_Inconclusive_Notes.docx'
   end                                                                                   _FILE_NL1
-  ,case  when  '#RptType#' ='Result' AND I.sStatus NOT IN ('Pass') then 'y_Insp2_PHA_InspLetters_Failed_Items.docx' end   _FILE_NL2
-  ,case  when  '#RptType#' ='Result' AND I.sSecondaryStatus in ('Fail Landlord Cert') then 'y_Insp2_PHA_InspLetters_Self_Certify.docx' end   _FILE_NL3
+  ,case  when  '#RptType#' ='Result' AND I.sSecondaryStatus in ('Fail Landlord Cert') then 'y_Insp2_PHA_InspLetters_Self_Certify.docx' end   _FILE_NL2
+  ,case  when  '#RptType#' ='Result' AND I.sStatus NOT IN ('Pass') then 'y_Insp2_PHA_InspLetters_Failed_Items.docx' end   _FILE_NL3
   ,'FailedItems_sub'                                                                   _SUB_0
   ,'FailedItems' 									 																							        _GRID_0
 ,S.hStpr
