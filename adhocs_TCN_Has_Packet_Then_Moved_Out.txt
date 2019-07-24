@@ -26,6 +26,15 @@ TCN Has Packet Then Moved Out
 
 //Select Primary
  SELECT TOP 1 'y_TCN_Has_Packet_Then_Moved_Out.docx' _FILE_
+              ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                rsc.chairperson                             chairperson,
+                rsc.viceChairperson                         viceChairperson,
+                rsc.boardmember1                            boardmember1,
+                rsc.boardmember2                            boardmember2,
+                rsc.boardmember3                            boardmember3,
+                rsc.boardmember4                            boardmember4,
+                rsc.boardmember5                            boardmember5,
+                rsc.execDirector                            execDirector
               , p.sCode 'PropCode'
               , tenant.sCode 'TenCode'
               , unit.sCode 'TenUnitCode'
@@ -40,6 +49,7 @@ TCN Has Packet Then Moved Out
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
  INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+ cross join board_commishes_footer_RSC rsc
 
  WHERE 1 = 1
  AND p.itype = 3
