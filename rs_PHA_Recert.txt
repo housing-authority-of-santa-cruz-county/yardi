@@ -444,7 +444,6 @@ Where Comp58.sActionType2a Not In ('5', '6')
                  Else 0
             End)
       )
-  AND 1 = Case When ('Re-Examinations' In ('#RecertType#') OR '' IN ('#RecertType#')) Then ( CASE WHEN Comp58.dtleaseend IS NOT NULL THEN ( CASE WHEN LAST58.sactiontype2a = 'A' THEN 1 ELSE ( CASE WHEN Comp58.dtleaseend > comp58.dtnexteffective2d THEN 1 ELSE 0 END ) END ) ELSE 1 END ) ELSE 1 END
   AND ISNULL(S.bNonPHA,0) =0
   AND NOT EXISTS(SELECT 1 FROM H8TENANT H8T WHERE H8T.hTenant1 = T.hMyPerson)
   AND ISNULL(xRef.bExclude,0) = 0
@@ -539,7 +538,7 @@ Where Comp58.sActionType2a Not In ('5', '6')
                  Else 0
             End)
       )
-  AND 1 = Case When ('Re-Examinations' In ('#RecertType#') OR '' IN ('#RecertType#')) Then ( CASE WHEN Comp58.dtleaseend IS NOT NULL THEN ( CASE WHEN LAST58.sactiontype2a = 'A' THEN 1 ELSE ( CASE WHEN Comp58.dtleaseend > comp58.dtnexteffective2d THEN 1 ELSE 0 END ) END ) ELSE 1 END ) ELSE 1 END
+
   AND ISNULL(S.bNonPHA,0) =0
   AND NOT EXISTS(SELECT 1 FROM H8TENANT H8T WHERE H8T.hTenant1 = T.hMyPerson)
   #CONDITIONS#
