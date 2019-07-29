@@ -57,10 +57,10 @@ Recertification Letters
 //end title
 
 //Select Primary
-Select case When '#RptType#' = 'Tenant Letter' AND t.sfields0 <> 'Spanish' then 'y_PHA_Recert_Tenant_Letter.docx'
-						When '#RptType#' = 'Tenant Letter' AND t.sfields0 = 'Spanish' then 'y_PHA_Recert_Tenant_Letter_Spanish.docx'
+Select case When '#RptType#' = 'Tenant Letter' AND isNull(t.sfields0,'') <> 'Spanish' then 'y_PHA_Recert_Tenant_Letter.docx'
+						When '#RptType#' = 'Tenant Letter' AND isNull(t.sfields0,'') = 'Spanish' then 'y_PHA_Recert_Tenant_Letter_Spanish.docx'
 						When '#RptType#' = 'Owner Letter' then 'y_PHA_Recert_Owner_Letter.docx'	 end  _FILE_NL1,
-        case When t.sfields0 <> 'Spanish' then 'y_PHA_Recert_Tenant_Letter_Cover.docx' else 'y_PHA_Recert_Tenant_Letter_Cover_Spanish.docx' end  _FILE_NL2,
+        case When isNull(t.sfields0,'') <> 'Spanish' then 'y_PHA_Recert_Tenant_Letter_Cover.docx' else 'y_PHA_Recert_Tenant_Letter_Cover_Spanish.docx' end  _FILE_NL2,
             '\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                             rsc.chairperson                             chairperson,
                             rsc.viceChairperson                         viceChairperson,
@@ -387,7 +387,7 @@ Select case When '#RptType#' = 'Tenant Letter' AND t.sfields0 <> 'Spanish' then 
                   Convert(varchar(8),DateAdd(d,-60,Case When Comp58.dtNextEffective2d between '#dtFrom#' and '#dtTo#' Then Comp58.dtNextEffective2d When Comp58.dtNextEffectiveFlat between '#dtFrom#' and '#dtTo#' Then Comp58.dtNextEffectiveFlat Else Null End),1) daysMinus60,
                   Convert(varchar(8),DateAdd(d,-30,Case When Comp58.dtNextEffective2d between '#dtFrom#' and '#dtTo#' Then Comp58.dtNextEffective2d When Comp58.dtNextEffectiveFlat between '#dtFrom#' and '#dtTo#' Then Comp58.dtNextEffectiveFlat Else Null End),1) daysMinus30,
 						GETDATE() ExecutionTime,
-            char(13)+char(10)+' '+char(13)+char(10)+ case when t.sfields0 = 'Spanish' then 'Si no cumple con el requisito mencionado, es posible que se ponga fin a su asistencia de renta efectivo el ' + Convert(varchar(8),Comp58.dtNextEffective2d,3) + Case P.sCode When '100' THEN '.' Else ', y usted será responsable de pagar el contrato completo a su propietario efectivo ' + Convert(varchar(8),Comp58.dtNextEffective2d,3) + '.' +char(13)+char(10)+' '+char(13)+char(10) END else 'If you fail to abide by the requirement  above, your rental assistance may be terminated effective ' + Convert(varchar(8),Comp58.dtNextEffective2d,1) + Case P.sCode When '100' THEN '.' Else ', and you will be responsible for paying the full contract to your Landlord effective ' + Convert(varchar(8),Comp58.dtNextEffective2d,1) + '.' +char(13)+char(10)+' '+char(13)+char(10) END END TermPara,
+            char(13)+char(10)+' '+char(13)+char(10)+ case when isNull(t.sfields0,'') = 'Spanish' then 'Si no cumple con el requisito mencionado, es posible que se ponga fin a su asistencia de renta efectivo el ' + Convert(varchar(8),Comp58.dtNextEffective2d,3) + Case P.sCode When '100' THEN '.' Else ', y usted será responsable de pagar el contrato completo a su propietario efectivo ' + Convert(varchar(8),Comp58.dtNextEffective2d,3) + '.' +char(13)+char(10)+' '+char(13)+char(10) END else 'If you fail to abide by the requirement  above, your rental assistance may be terminated effective ' + Convert(varchar(8),Comp58.dtNextEffective2d,1) + Case P.sCode When '100' THEN '.' Else ', and you will be responsible for paying the full contract to your Landlord effective ' + Convert(varchar(8),Comp58.dtNextEffective2d,1) + '.' +char(13)+char(10)+' '+char(13)+char(10) END END TermPara,
             char(13)+char(10)+' '+char(13)+char(10)+'If you fail to abide by the requirement  above, your rental assistance may be terminated effective ' + Convert(varchar(8),Comp58.dtNextEffective2d,1) + Case P.sCode When '100' THEN '.' Else ', and you will be responsible for paying the full contract to your Landlord effective ' + Convert(varchar(8),Comp58.dtNextEffective2d,1) + '.' +char(13)+char(10)+' '+char(13)+char(10) END TermParaEng,
             'PropDet' _GRID_0
 From  H8Summ S
