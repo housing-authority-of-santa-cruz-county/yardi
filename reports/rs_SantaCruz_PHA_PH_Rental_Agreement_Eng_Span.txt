@@ -1,0 +1,163 @@
+//vista
+
+//Database
+FILLDOCS
+//End Database
+
+//Options
+OutPutToPDF
+//End Options
+
+//Title
+Santa Cruz PH Lease Agreement
+//end title
+
+//Select Primary
+SELECT CASE WHEN '#ReportType#' = 'English' THEN 'y_HASC_PHRental_Agreement_Parts_Eng.docx' else 'y_HASC_PHRental_Agreement_Parts_Span.docx' end _FILE_
+, CASE '#LeaseEffDt#' WHEN NULL THEN CONVERT(varchar(10),GETDATE(),101) ELSE convert(varchar(10),'#LeaseEffDt#',101) END 'LeaseEffDt'
+,getdate () todaysdate
+,day(getdate()) as spday
+,dbo.fn_ebhGetMonthName (GetDate(), 'Spanish') As 'spmo'
+,year(getdate()) as spyear
+, S.HMy HMY
+, S.hTenant
+, S.sHeadName3b 'HOHName'
+, S.sHeadSSN3n
+, T.sCode
+, T.sLASTNAME 'TenLastName'
+, T.sFIRSTNAME 'TenFirstName'
+, T.sFirstName + ' ' + T.sLastName 'TenantName'
+, T.SADDR1
+, T.SADDR2
+, T.SCITY
+, T.SSTATE
+, T.SZIPCODE
+, U.IBEDROOMS
+, T.SPHONENUM1
+, T.dtLeaseFrom LeaseEff
+, T.dtLeaseTo LeaseEnd
+, CONVERT(varchar(10), T.dtMoveIn, 101) 'TenMoveIn'
+, A.sADDR1 AddressP1
+, A.sADDR2 AddressP2
+, A.sCITY CityP
+, A.sSTATE StateP
+, A.sZIPCODE ZipP
+, a.sAddr1 'UnitAddr1'
+, a.sAddr2 'UnitAddr2'
+, a.sAddr3 'UnitAddr3'
+, a.sCity 'UnitCity'
+, a.sState 'UnitState'
+, a.sZipCode 'UnitZip'
+, CASE WHEN isnull(a.saddr1, '') <> '' THEN ltrim(rtrim(a.saddr1)) + ', ' ELSE '' END + CASE WHEN isnull(a.saddr2, '') <> '' THEN ltrim(rtrim(a.saddr2)) + ', ' ELSE '' END + CASE WHEN isnull(a.saddr3, '') <> '' THEN ltrim(rtrim(a.saddr3)) + ', ' ELSE '' END + CASE WHEN isnull(a.sCity, '') <> '' THEN ltrim(rtrim(a.sCity)) ELSE '' END + CASE WHEN isnull(a.sState, '') = '' and isnull(a.sZipCode, '') = '' THEN ltrim(rtrim(a.sState)) + ' ' + ltrim(rtrim(a.SZIPCODE)) ELSE ', ' + ltrim(rtrim(a.sState)) + ' ' + ltrim(rtrim(a.SZIPCODE)) END 'UnitAddress'
+, CASE WHEN H8P.bFullSubsidy= 0 THEN H8P.dUA10r ELSE H8P.dUA10d END 'PubUtilAllow'
+, PR.saddr1 'PropName'
+, PR.saddr2 'PropAddr2'
+, PR.scity 'PropCity'
+, PR.sstate 'PropState'
+, PR.szipcode 'PropZip'
+, CASE WHEN '#GS#' = 'Yes' THEN 'X' ELSE '    ' END 'GS'
+, CASE WHEN '#ES#' = 'Yes' THEN 'X' ELSE '    ' END 'ES'
+, CASE WHEN '#Refrig#' = 'Yes' THEN 'X' ELSE '    ' END 'Refrig'
+, CASE WHEN isnull('#OtherApp#', '') = '' THEN ''
+       ELSE 'X' END 'OTH'
+, CASE WHEN  isnull('#OtherApp#', '') = '' THEN ''
+       ElSE '#OtherApp#' END 'OtherApp'
+, CASE WHEN  isnull('#Elec#', '') = '' THEN ''
+	   WHEN '#ReportType#' = 'English' and '#Elec#' = 'Authority' THEN 'AUTHORITY'
+	   WHEN '#ReportType#' = 'Spanish' and '#Elec#' = 'Authority' THEN 'AUTORIDAD'
+	   WHEN '#ReportType#' = 'Spanish' and '#Elec#' = 'Tenant' THEN 'RESIDENTE'
+	   ELSE 'RESIDENT' END 'Elec'
+, CASE WHEN isnull('#Gas#', '') = '' THEN ''
+       WHEN '#ReportType#' = 'English' and '#Gas#' = 'Authority' THEN 'AUTHORITY'
+	   WHEN '#ReportType#' = 'Spanish' and '#Gas#' = 'Authority' THEN 'AUTORIDAD'
+	   WHEN '#ReportType#' = 'Spanish' and '#Gas#' = 'Tenant' THEN 'RESIDENTE'
+	   ELSE 'RESIDENT' END 'Gas'
+, CASE WHEN isnull('#Heat#', '')= '' THEN ''
+       WHEN '#ReportType#' = 'English' and '#Heat#' = 'Authority' THEN 'AUTHORITY'
+	   WHEN '#ReportType#' = 'Spanish' and '#Heat#' = 'Authority' THEN 'AUTORIDAD'
+	   WHEN '#ReportType#' = 'Spanish' and '#Heat#' = 'Tenant' THEN 'RESIDENTE'
+	   ELSE 'RESIDENT' END 'Heat'
+, CASE WHEN isnull('#GTR#','') = '' THEN ''
+	   WHEN '#ReportType#' = 'English' and '#GTR#' = 'Authority' THEN 'AUTHORITY'
+	   WHEN '#ReportType#' = 'Spanish' and '#GTR#' = 'Authority' THEN 'AUTORIDAD'
+	   WHEN '#ReportType#' = 'Spanish' and '#GTR#' = 'Tenant' THEN 'RESIDENTE'
+	   ELSE 'RESIDENT' END 'GTR'
+, CASE WHEN  isnull('#Water#','') = '' THEN ''
+	   WHEN '#ReportType#' = 'English' and '#Water#' = 'Authority' THEN 'AUTHORITY'
+	   WHEN '#ReportType#' = 'Spanish' and '#Water#' = 'Authority' THEN 'AUTORIDAD'
+	   WHEN '#ReportType#' = 'Spanish' and '#Water#' = 'Tenant' THEN 'RESIDENTE'
+	   ELSE 'RESIDENT' END 'Water'
+, '#MonthlyRent#' 'MonthlyRent'
+, '#SecDep#' 'SecDep'
+, '#OtherUtils#' 'OtherUtils'
+, '#OtherInfo#' 'OtherInfo'
+, CASE WHEN H8P.bFullSubsidy= 0 THEN H8P.dMixedTR10s ELSE H8P.dTR10e END 'PubTenRent'
+, CASE WHEN H8P.bFullSubsidy= 0 THEN H8P.dMixedUR10s ELSE H8P.dUR10e END 'PubURP'
+, S.hMy _Key_
+,'MemDetails' _GRID_0
+,'18andOlder' _GRID_1
+FROM  Property PR
+	LEFT JOIN UNIT U ON U.hProperty = PR.hMy
+	INNER JOIN H8Unit HU ON HU.HUnit= U.Hmy
+	LEFT JOIN TENANT T ON T.hUnit = U.hMy
+	LEFT JOIN ADDR A ON U.hMy = A.hPointer
+	INNER JOIN H8Summ S ON T.hMyPerson = S.hTenant
+	INNER JOIN H8PUBLIC H8P ON S.hMY = H8P.hSum
+WHERE 1 = 1
+	AND S.bMasterRecd = -1
+	AND A.iType = 4
+#conditions#
+//END select
+
+//GRID MemDetails
+SELECT F.hSum _Key_
+, F.ImemberNUM
+, F.hTenant
+, F.sFirstName + CASE isnull(F.sMI, '') WHEN '' THEN '' ELSE ' ' + F.sMI END + ' ' + F.sLastName 'MemName'
+, F.sRelation 'MemREL'
+, (CASE WHEN ISNULL((select sValue from paramopt2 where upper(stype) = 'ENABLEDATAENCRYPTION'),'')='-1' THEN DBO.DB_DataDecrypt(F.sSSNSecure) ELSE F.sSSN END) 'MemSSN'
+, convert(varchar(10), F.DTDOB, 101) 'MemDOB'
+FROM h8family F
+WHERE 1=1
+AND F.hSum = #KEY#
+ORDER BY F.ImemberNUM
+//End Select
+
+//GRID 18andOlder
+SELECT F.hSum _Key_
+, F.ImemberNUM
+, F.sFirstName + CASE isnull(F.sMI, '') WHEN '' THEN '' ELSE ' ' + F.sMI END + ' ' + F.sLastName 'MemName'
+FROM h8family F
+WHERE dbo.fH8_iAge(F.DTDOB, GETDATE()) > 17
+AND F.hSum = #KEY#
+ORDER BY F.ImemberNUM
+//End Select
+
+
+
+//FORMAT
+LeaseEffDt MMMM DD, YYYY
+MonthlyRent  ###,##0.00
+SecDep   ###,##0.00
+//END FORMAT
+
+//Filter
+//Type, DataTyp,         Name,                 Caption,        Key,                List,                                    Val1,         Val2, Mandatory,Multi-Type,  Title
+     C,       T,       PR.hMy,                Property,           ,                  61,                       PR.hMy = #PR.hMy#,             ,         N,          ,      Y,
+     C,       T,      t.hUnit,                    Unit,           ,                   4,                     t.hUnit = #t.hUnit#,             ,         N,          ,       ,
+     C,       T,         Code,             Tenant Code,           ,                   1,                      S.hTenant = #Code#,             ,         Y,          ,      Y,
+	 0,       A,   LeaseEffDt,    Lease Effective Date,           ,                    ,                                        ,             ,         Y,          ,       ,
+	 0,       D,  MonthlyRent,            Monthly Rent,           ,                    ,                                        ,             ,         Y,          ,       ,
+     0,       D,       SecDep,        Security Deposit,           ,                    ,                                        ,             ,         Y,          ,       ,
+     L,       T,  		   GS,               Gas Stove,           ,             ^Yes^No,                                        ,             ,         Y,          ,       ,
+	 L,       T,  		   ES,          Electric Stove,           ,             ^Yes^No,                                        ,             ,         Y,          ,       ,
+	 L,       T,       Refrig,            Refrigerator,           ,             ^Yes^No,                                        ,             ,         Y,          ,       ,
+	 0,       T,     OtherApp,         Other Appliance,           ,                    ,                                        ,             ,         N,          ,       ,
+	 L,       T,  		 Elec,     Electricity Paid By,           ,   ^Tenant^Authority,                                        ,             ,         Y,          ,       ,
+	 L,       T,  		  Gas,             Gas Paid By,           ,   ^Tenant^Authority,                                        ,             ,         Y,          ,       ,
+	 L,       T,  	     Heat,   Other Heating Paid By,           ,   ^Tenant^Authority,                                        ,             ,         Y,          ,       ,
+	 L,       T,  		  GTR,           Trash Paid By,           ,   ^Tenant^Authority,                                        ,             ,         Y,          ,       ,
+	 L,       T,        Water,           Water Paid By,           ,   ^Tenant^Authority,                                        ,             ,         Y,          ,       ,
+	 L,		  T,   ReportType,                Language,           ,     English^Spanish,                                        ,             ,         N,          ,       ,
+	 //End Filter
+	 

@@ -18,6 +18,7 @@ FillDocs
 //End Database
 
 //Options
+OUTPUTTOPDF
 //End Options
 
 //Title
@@ -26,20 +27,43 @@ TAL Termination of Assistance
 
 //LIST TAL_Termination
 Y_TAL_Termination_Assistance.docx
-HUD-5380.docx
+HUD-5380.pdf
 //END LIST
 
 //Select Primary
 SELECT TOP 2 'TAL_Termination' _LIST_
+,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                rsc.chairperson                             chairperson,
+                rsc.viceChairperson                         viceChairperson,
+                rsc.boardmember1                            boardmember1,
+                rsc.boardmember2                            boardmember2,
+                rsc.boardmember3                            boardmember3,
+                rsc.boardmember4                            boardmember4,
+                rsc.boardmember5                            boardmember5,
+                rsc.execDirector                            execDirector
             , GETDATE() 'LetterDate'
             , p.sCode 'PropCode'
             , unit.sCode 'UnitCode'
             , tenant.sCode 'TenCode'
             , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'TenFirstLast'
-            , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'TenFullAddress'
+            , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10)+char(13) else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10)+char(13) else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'TenFullAddress'
             , REVIEW58VOUCH.dCR12p 'RentAmt'
             , Review58SUMM.dteffective2b 'Review58EffDate'
-            ,ISNULL(Tenant_Landlord.Tenant_Landlord,-1) Tenant_Landlord
+            , ISNULL(Tenant_Landlord.Tenant_Landlord,-1) Tenant_Landlord
+            , case when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(Tenant.sFirstName,'')+' '+ IsNull(Tenant.sLastName,''))
+            when Tenant_Landlord.Tenant_Landlord= 0 then 'Landlord: ' + LTrim(RTrim(IsNull(O.sFirstName, '') + CASE When IsNull(O.sFirstName, '') = IsNull(O.uLastName, '') Then '' Else ' ' + IsNull(O.uLastName, '') END))
+            else  '' end  LLName
+            , case when Tenant_Landlord.Tenant_Landlord= 1 then 'Tenant'
+            when Tenant_Landlord.Tenant_Landlord= 0 then 'Landlord'
+            else '' end RecptType
+            , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'EndDate'
+            , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'LetterMailDate'
+            ,case when Tenant_Landlord.Tenant_Landlord= 0 then Ltrim(Isnull(Tenant.sFirstName,'')+' '+ IsNull(Tenant.sLastName,''))
+when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(O.sFirstName,'')+' '+ IsNull(O.uLastName,''))
+else  '' end  ToName
+            , case when Tenant_Landlord.Tenant_Landlord=0 then  isnull(tenant_addrr.tenantaddress,'')
+ when Tenant_Landlord.Tenant_Landlord= 1 then isnull(Owner_addrr.Owneraddress,'')
+ else  '' end MailAddress
 FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
 INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
 INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
@@ -56,6 +80,25 @@ LEFT JOIN Person O on O.hMy = H8U.hVendorLtr
                                 WHEN Tenant_Landlord.Tenant_Landlord=0 AND ISNULL(Tenant.hmyperson,0)> 0 THEN 1
                              ELSE 0
                              END
+       Outer apply (
+                 select
+                  case len(isnull(Tenant.SADDR1,'')) when 0 then '' else  isnull(Tenant.SADDR1,'')  end
+                 +case len(isnull(Tenant.SADDR2,'')) when 0 then '' else  isnull(char(10)+char(13)+Tenant.SADDR2,'') end
+                 +case len(isnull(Tenant.scity,''))  when 0 then '' else  isnull(char(10)+char(13)+Tenant.scity+', ','') end
+                 +case len(isnull(Tenant.sstate,'')) when 0 then '' else   isnull(Tenant.sstate,'') end
+                 +case len(isnull(Tenant.szipcode,''))  when 0 then '' else isnull(' '+Tenant.szipcode,'') end
+                 tenantaddress
+            ) tenant_addrr
+         Outer apply (
+                 select
+                 case len(isnull(O.SADDR1,''))  when 0 then '' else  isnull(O.SADDR1,'') end
+                 +case len(isnull(O.SADDR2,''))  when 0 then '' else  isnull(char(10)+char(13)+O.SADDR2,'')end
+                 +case len(isnull(O.scity,''))  when 0 then '' else  isnull(char(10)+char(13)+O.scity+', ','')end
+                 +case len(isnull(O.sstate,''))  when 0 then '' else   isnull(O.sstate,'') end
+                 +case len(isnull(O.szipcode,''))  when 0 then '' else isnull(' '+O.szipcode,'') end
+                 Owneraddress
+            )Owner_addrr
+            cross join board_commishes_footer_RSC rsc
 WHERE 1 = 1
 AND p.itype = 3
 
@@ -66,6 +109,7 @@ ORDER BY Review58EffDate Desc
 
 //Format
 LetterMailDate MMMM DD, YYYY
+EndDate MMMM DD, YYYY
 LetterDate MMMM DD, YYYY
 TenFullAddress Multiline
 Review58EffDate MM/DD/YYYY
@@ -74,6 +118,7 @@ Review58EffDate MM/DD/YYYY
 //Filter
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
 0    ,A    ,"FillDate11"    ,"Letter Mail Date"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,A    ,"FillDate12"    ,"Termination Date"    ,  ,""    ,"",     ,N    ,   ,Y
 C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
 0    ,T    ,"Field110"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field110#') ",     ,N    ,   ,Y
 0    ,T    ,"Field111"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field111#') ",     ,N    ,   ,Y
