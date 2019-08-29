@@ -1,0 +1,203 @@
+//vista
+
+//Database
+SSRS "rx_Payable_ACH_Statement.rdlc"
+//End Database
+
+//NOTES
+Copyright (c) 1999 - 2003 by Yardi Systems, Inc.
+
+     NAME:
+       rs_Payable_ACH_Statement.txt
+     DESCRIPTION:
+	     Setup to print a statement to be sent to an individual that received a deposit through ACH payment.
+     NOTES:
+
+     MODIFIED:
+       06/17/03 RE - Report Created
+       11/21/2013 -RupeshkumarB- TR#203957 - Changed menu/filter/report titles from ACH Statement to EFT Statement
+       11/04/2015 - PrasadD - TR#383362 - Fixed issue that duplicate rows were appearing on the report output and also adjusted the report
+                                          to show tenant's EFT payments by adding new Tenant filter field.
+			 11/23/2015 - SagarM - TR#383362: Fixed Defect#54912. Added missing join condition for Bank table
+//END NOTES
+
+//Crystal
+cryactive Y
+//end crystal
+
+//Title
+EFT Payment Statement
+//end title
+
+//Select
+DECLARE @encryptionEnabled INTEGER
+SET @encryptionEnabled=isnull( (SELECT svalue
+                         FROM   paramopt2
+                         WHERE  Upper(stype) = 'ENABLEDATAENCRYPTION'),0)
+
+SELECT
+  ps.IPERSONTYPE PERSONTYPE,
+  ltrim(tr.uRef) TranRef,
+  rtrim(b.sCode) BankCode,
+  rtrim(ps.uLastName) PersonLName,
+  rtrim(ps.sFirstName) PersonFName,
+  rtrim(ps.sAddr1) PersonAddr1,
+  rtrim(ps.sAddr2) PersonAddr2,
+  rtrim(ps.sCity)  PersonCity,
+  rtrim(ps.sState) PersonState,
+  rtrim(ps.sZipcode) PersonZip,
+  rtrim(ps.uCode) PersonCode,
+  rtrim(ach.sName) PersonBank,
+  CASE
+         WHEN Isnull(@encryptionEnabled, 0) = -1 THEN Rtrim(dbo.Db_datadecrypt(ach.stransitSecure))
+         ELSE Rtrim(ach.stransit)
+       END                                  PersonTransit,
+	   CASE
+         WHEN Isnull(@encryptionEnabled, 0) = -1 THEN Rtrim(dbo.Db_datadecrypt(ach.sAcctSecure))
+         ELSE Rtrim(ach.sAcct)
+       END                                  PersonAcct,
+  tr.sDateOccurred TransDate,
+  tr.uPostDate PostDate,
+  case when tr.VOIDED = 0 then ''
+       else 'Voided' end TransStatus,
+  case when tr.VOIDER = 0 then ''
+       else 'Voider' end TransVoider,
+  trorig.sNotes,
+  'P-' + convert(varchar,d.hInvOrRec - 300000000) PayableNumber,
+  p.sCode PropCode,
+  d.sAmount TransAmt,
+  tr.sNotes TranNote,
+  rtrim(a.sCode) + ' - ' + rtrim(a.sDesc) TransAccount
+FROM trans tr, property p, bank b, person ps,
+     detail d, trans trorig, acct a, achdata ach,
+     achtrans achtr, achfile achf
+WHERE tr.iType = 2
+  and   ps.hmy = ach.hperson
+  and   trorig.hMy = d.hInvOrRec
+  and   tr.hAccrualAcct = ps.hMy
+  and   tr.hPerson = b.hMy
+  and   tr.hMy = d.hChkOrChg
+  and   d.hProp = p.hMy
+  and   d.hAcct = a.hMy
+  and   tr.bOpen = CASE '#recon#' WHEN 'Yes' THEN tr.bOpen ELSE -1 END
+  and   tr.bAch = -1
+  and   tr.hmy = achtr.htrace
+  and   achtr.hfile = achf.hmy
+  and   ps.IPERSONTYPE = 5
+  and   isnull(ach.bInActive,0) = 0
+  and   (case  WHEN @encryptionEnabled= -1
+	THEN dbo.Db_datadecrypt(achtr.sRecTransitSecure)
+	else achtr.SRECTRANSIT end)
+	=
+	(case  WHEN @encryptionEnabled= -1
+	THEN dbo.Db_datadecrypt(ach.STRANSITSecure)
+	else ach.STRANSIT end)
+  and  (CASE WHEN @encryptionEnabled =-1
+       THEN DBO.DB_DataDecrypt(achtr.sRecAcctSecure)
+       else achtr.srecacct end)
+	=
+	(CASE WHEN @encryptionEnabled =-1
+	THEN DBO.DB_DataDecrypt(ach.sAcctSecure)
+	else ach.sacct end)
+	and '#hTenant#' = ''
+#conditions#
+
+UNION ALL
+
+SELECT
+       ps.IPERSONTYPE                              PERSONTYPE,
+       Ltrim(tr.uref)                              TranRef,
+       Rtrim(b.scode)                              BankCode,
+       Rtrim(ps.ulastname)                         PersonLName,
+       Rtrim(ps.sfirstname)                        PersonFName,
+       Rtrim(ps.saddr1)                            PersonAddr1,
+       Rtrim(ps.saddr2)                            PersonAddr2,
+       Rtrim(ps.scity)                             PersonCity,
+       Rtrim(ps.sstate)                            PersonState,
+       Rtrim(ps.szipcode)                          PersonZip,
+       Rtrim(ps.ucode)                             PersonCode,
+       Rtrim(ach.sname)                            PersonBank,
+       CASE
+         WHEN Isnull(@encryptionEnabled, 0) = -1 THEN Rtrim(
+         dbo.Db_datadecrypt(ach.stransitsecure))
+         ELSE Rtrim(ach.stransit)
+       END                                         PersonTransit,
+       CASE
+         WHEN Isnull(@encryptionEnabled, 0) = -1 THEN Rtrim(
+         dbo.Db_datadecrypt(ach.sacctsecure))
+         ELSE Rtrim(ach.sacct)
+       END                                         PersonAcct,
+       tr.sdateoccurred                            TransDate,
+       tr.upostdate                                PostDate,
+       CASE
+         WHEN tr.voided = 0 THEN ''
+         ELSE 'Voided'
+       END                                         TransStatus,
+       CASE
+         WHEN tr.voider = 0 THEN ''
+         ELSE 'Voider'
+       END                                         TransVoider,
+       trorig.snotes,
+       'P-'
+       + CONVERT(VARCHAR, d.hinvorrec - 300000000) PayableNumber,
+       p.scode                                     PropCode,
+       d.samount                                   TransAmt,
+       tr.snotes                                   TranNote,
+       Rtrim(a.scode) + ' - ' + Rtrim(a.sdesc)     TransAccount
+FROM   trans tr,
+       property p,
+       bank b,
+       person ps,
+       detail d,
+       trans trorig,
+       acct a,
+       achdata ach,
+       achtrans achtr,
+       achfile achf
+WHERE  1=1
+       AND tr.itype = 3
+       AND ps.hmy = ach.hperson
+       AND d.hChkOrChg = achtr.htrace
+       AND d.hBank = B.hMy
+       AND achtr.hfile = achf.hmy
+       AND trorig.hmy = d.hinvorrec
+       AND tr.hperson = ps.hmy
+       AND tr.hmy = d.hinvorrec
+       AND d.hprop = p.hmy
+       AND d.hacct = a.hmy
+       and tr.bOpen = CASE '#recon#' WHEN 'Yes' THEN tr.bOpen ELSE -1 END
+       AND tr.bAch = -1
+       and ps.IPERSONTYPE = 1
+       and isnull(ach.bInActive,0) = 0
+		  and   (case  WHEN @encryptionEnabled= -1
+			THEN dbo.Db_datadecrypt(achtr.sRecTransitSecure)
+			else achtr.SRECTRANSIT end)
+			=
+			(case  WHEN @encryptionEnabled= -1
+			THEN dbo.Db_datadecrypt(ach.STRANSITSecure)
+			else ach.STRANSIT end)
+		  and  (CASE WHEN @encryptionEnabled =-1
+		       THEN DBO.DB_DataDecrypt(achtr.sRecAcctSecure)
+		       else achtr.srecacct end)
+			=
+			(CASE WHEN @encryptionEnabled =-1
+			THEN DBO.DB_DataDecrypt(ach.sAcctSecure)
+			else ach.sacct end)
+       AND '#hPerson#' = ''
+#conditions#
+ORDER BY BankCode, TranRef, PayableNumber
+//end select
+
+//Filter
+//Type, DataTyp,    Name,                      Caption,  Key,                                                                                                                         List,                                               Val1,Val2, Mandatory,Multi-Type, Title
+C,        T,        p.hmy,                    Property,     ,                                                                                                                           61,                                   p.hmy = #p.hmy# ,    ,          ,          ,    Y,
+C,        T,        hBank,                       *Bank,     ,                                                                                                                           14,                                   b.hMy = #hBank# ,    ,          ,          ,    Y,
+C,        T,        hPerson,                    Vendor,     ,                                                                                                                            5,                                ps.hMy = #hPerson# ,    ,          ,          ,    Y,
+C,        T,        hTenant,                 Or Tenant,     ,                                                                                                                            1,                                ps.hMy = #hTenant# ,    ,          ,          ,    Y,
+C,        T,        hAccount,                  Account,     ,                                                                                                                            7,                                a.hmy = #hAccount# ,    ,          ,         2,    Y,
+0,        I,        tr.uRef,                      EFT#,     ,                                                                                                                             ,            ltrim(rtrim(tr.uref)) like '#tr.uref#%',    ,          ,          ,    Y,
+0,        I,   	    sUniqueId,   	           EFT Batch,    	, "select suniqueid, convert(varchar,dtdate,101)+' ('+ rtrim(sName)+')' from achfile where 1=1 #filter2# order by dtdate desc",                     achf.suniqueid = '#sUniqueID#',    ,    	    ,          ,    Y,
+R,        M,        begmonth:endmonth,          *mm/yy,     ,                                                                                                                             , tr.uPostDate Between '#begmonth#' AND '#endmonth#',    ,          ,          ,    Y,
+R,        A,        depfr:depTo,      EFT Payment Date,     ,                                                                                                                             ,   tr.sDateOccurred Between '#depFr#' AND '#depTo#',    ,          ,          ,    Y,
+L,        T,        recon,           *All EFT Payments,     ,                                                                                                             Yes^Unreconciled,                                                   ,    ,         Y,          ,    Y,
+//end filter
