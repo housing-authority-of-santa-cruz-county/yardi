@@ -1,0 +1,57 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_PIW_pi_warning.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/16/2019 - Created by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+//End Options
+
+//Title
+PIW Warning
+//End Title
+
+//Select Primary
+ SELECT  'Y_PIW_Warning_Letter.docx' _FILE_
+              , p.sCode 'PropCode'
+              , unit.sCode 'UnitCode'
+              , tenant.sCode 'TenCode'
+              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'TenFirstLast'
+              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'TenFullAddress'
+              , '#FillText11#' 'Reasons'
+              , '#FillText12#' 'FillText2'
+              , GETDATE() 'LetterDate'
+ FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+ INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  p.sCode ASC
+//End Select Primary
+
+//Format
+TenFullAddress Multiline
+LetterDate MMMM DD, YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
+0    ,T    ,"Field11"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field11#') ",     ,N    ,   ,Y
+0    ,T    ,"Field12"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
+M    ,T    ,"FillText11"    ,"Violations"    ,  ,"a^b^c"    ,"'#FillText11#'  IN  ('#Field19#') ",     ,N    ,   ,Y
+0    ,T    ,"FillText12"    ,"Other Violation(s)"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

@@ -40,13 +40,13 @@ CTN Notice to Vacate
               , unit.sCode 'UnitCode'
               , tenant.sCode 'TenCode'
               , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
-              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
-              , v.ulastname 'LLName'
-              , pr.saddr1 + ' ' + CASE
+              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10) else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10) else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
+              , pr.sFedName 'LLName'
+              , pr.saddr1 + CASE
               WHEN pr.saddr2 = null THEN ''
               WHEN pr.saddr2 = '' THEN ''
-              ELSE ' ' + pr.saddr2
-              END + '^' + pr.scity + ', ' + pr.sstate + ' ' + pr.szipcode 'LLAddress'
+              ELSE char(10) + pr.saddr2
+              END + char(10) + pr.scity + ', ' + pr.sstate + ' ' + pr.szipcode 'LLAddress'
               , GETDATE() 'LetterDate'
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
@@ -57,13 +57,12 @@ CTN Notice to Vacate
 
  WHERE 1 = 1
  AND p.itype = 3
+ AND v.uLastName IS NOT NULL
  #conditions#
 //End Select Primary
 
 //Format
 EndDate MMMM DD, YYYY
-MailAddress Multiline
-LLAddress Multiline
 LetterDate MMMM DD, YYYY
 //End Format
 

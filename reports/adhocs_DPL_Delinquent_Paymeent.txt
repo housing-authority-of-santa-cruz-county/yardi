@@ -1,0 +1,68 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_DPL_Delinquent_Paymeent.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/16/2019 - Created by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+DPL Delinquent Payment
+//End Title
+
+//Select Primary
+ SELECT  'Y_DPL_Delinq_Pay.docx' _FILE_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , p.sCode 'PropCode'
+              , tenant.sCode 'tcode'
+              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
+              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
+              , unit.sCode 'UnitCode'
+              , '#FillText11#' 'Amount'
+              , GETDATE() 'LetterDate'
+              , DATEADD (day, 16, GETDATE()) 'DueDate'
+ FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+ INNER JOIN Tenant ON (unit.hMy = tenant.hUnit) cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  p.sCode ASC
+//End Select Primary
+
+//Format
+LetterDate MMMM DD, YYYY
+DueDate MMMM DD, YYYY
+MailAddress MultiLine
+Amount $####.##
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
+0    ,T    ,"Field11"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field11#') ",     ,N    ,   ,Y
+0    ,T    ,"Field12"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
+0    ,T    ,"FillText11"    ,"Amount"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

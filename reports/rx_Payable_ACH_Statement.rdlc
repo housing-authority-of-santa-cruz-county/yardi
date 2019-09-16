@@ -1016,18 +1016,6 @@ IIF( IIF(IsNothing(Fields!PersonLName.Value),"NO","YES")= "YES"  AND Len(Fields!
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>= "Reminder: Due to the Labor Day Holiday on Monday, September 2nd, direct deposits will be transmitted on the first business day of the month on Tuesday, September 3rd and will be posted to your bank account by Wednesday, September 4th." + vbcrlf + vbcrlf</Value>
-                                  <Style>
-                                    <FontFamily>Tahoma</FontFamily>
-                                    <FontSize>7pt</FontSize>
-                                    <PaddingBottom>2pt</PaddingBottom>
-                                  </Style>
-                                </TextRun>
-                              </TextRuns>
-                            </Paragraph>
-                            <Paragraph>
-                              <TextRuns>
-                                <TextRun>
                                   <Value>= "The following is the direct deposit statement made on behalf of the following" + IIF(Fields!PERSONTYPE.Value = 5," vendor:"," tenant:")</Value>
                                   <Style>
                                     <FontFamily>Tahoma</FontFamily>

@@ -3,13 +3,14 @@
 //Notes
   Copyright (c) 2003 by Yardi Systems
   NAME
-    adhocs_CHP_Contract_Termination.txt
+    adhocs_vsc_voluntary_relinquish.txt
   DESCRIPTION
 
   NOTES
     Adhoc Report (SQL Server)
   MODIFIED
-    08/20/2019 - Created by jonathan
+    08/30/2019 - Created by jonathan
+    08/30/2019 - Last Modified by jonathan
 //End Notes
 
 //Database
@@ -21,11 +22,11 @@ OUTPUTTOPDF
 //End Options
 
 //Title
-CHP Contract Termination
+VSC Voluntary Relinquish
 //End Title
 
 //Select Primary
- SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_
+ SELECT TOP 1 'Y_VSC_Voluntary_Relinquish.docx' _FILE_
  ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                  rsc.chairperson                             chairperson,
                  rsc.viceChairperson                         viceChairperson,
@@ -35,10 +36,13 @@ CHP Contract Termination
                  rsc.boardmember4                            boardmember4,
                  rsc.boardmember5                            boardmember5,
                  rsc.execDirector                            execDirector
-              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'EndDate'
               , p.sCode 'PropCode'
               , unit.sCode 'UnitCode'
               , tenant.sCode 'TenCode'
+              , Review58SUMM.hMy 'control'
+              , Review58SUMM.dteffective2b 'Review58EffDate'
+              , CASE Review58SUMM.sprogram1d WHEN 'P' THEN 'Public Housing' WHEN 'MR' THEN 'Mod Rehab' WHEN 'CE' THEN 'Certificate' WHEN 'VO' THEN 'Voucher' WHEN 'H' THEN 'Homeownership' WHEN 'PV' THEN 'Project Based Voucher' ELSE Review58SUMM.sprogram1d END 'Program'
+              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'EndDate'
               , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
               , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10) else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10) else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
               , pr.sFedName 'LLName'
@@ -47,31 +51,32 @@ CHP Contract Termination
               WHEN pr.saddr2 = '' THEN ''
               ELSE char(10) + pr.saddr2
               END + char(10) + pr.scity + ', ' + pr.sstate + ' ' + pr.szipcode 'LLAddress'
-               , case when isnull(UAddr.saddr1, '') <> '' then ltrim(rtrim(UAddr.saddr1)) + char(10) else '' end + case when isnull(UAddr.saddr2, '') <> '' then ltrim(rtrim(UAddr.saddr2)) + char(10) else '' end + case when isnull(UAddr.saddr3, '') <> '' then ltrim(rtrim(UAddr.saddr3)) + char(10) else '' end + case when isnull(UAddr.sCity, '') <> '' then ltrim(rtrim(UAddr.sCity)) else '' end + case when isnull(UAddr.sState, '') = '' and isnull(UAddr.sZipCode, '') = '' then ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) else ', ' + ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) end 'UnitFullAddress'
               , GETDATE() 'LetterDate'
+              , DATEADD(day, 10, CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END) 'NoteDate'
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
- LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
- left join h8summ h8 on h8.htenant = Tenant.hmyperson
- left join vendor v on v.hmyperson = h8.hvendor
+ INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+ left join vendor v on v.hmyperson = Review58SUMM.hvendor
  left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
  cross join board_commishes_footer_RSC rsc
 
  WHERE 1 = 1
  AND p.itype = 3
- AND v.uLastName IS NOT NULL
  #conditions#
+ ORDER BY  Review58SUMM.dteffective2b DESC
 //End Select Primary
 
 //Format
+Review58EffDate MM/DD/YYYY
 EndDate MMMM DD, YYYY
 LetterDate MMMM DD, YYYY
+NoteDate MMMM DD, YYYY
 //End Format
 
 //Filter
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
-0    ,A    ,"FillDate11"    ,"Cancel Date"    ,  ,""    ,"",     ,N    ,   ,Y
 C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
-0    ,T    ,"Field19"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field19#') ",     ,N    ,   ,Y
-0    ,T    ,"Field110"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field110#') ",     ,N    ,   ,Y
+0    ,T    ,"Field11"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field11#') ",     ,N    ,   ,Y
+0    ,T    ,"Field12"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
+0    ,A    ,"FillDate11"    ,"Cancel Date"    ,  ,""    ,"",     ,N    ,   ,Y
 //End Filter
