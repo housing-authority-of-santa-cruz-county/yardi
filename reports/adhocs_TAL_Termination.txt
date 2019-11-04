@@ -31,7 +31,10 @@ HUD-5380.pdf
 //END LIST
 
 //Select Primary
-SELECT TOP 2 'TAL_Termination' _LIST_
+SELECT CASE WHEN Tenant.sUnitCode = 'PENDING' AND Tenant_Landlord.Tenant_Landlord= 1 THEN '' ELSE 'Y_TAL_Termination_Assistance.docx' END _FILE_NL1_
+, case when Tenant_Landlord.Tenant_Landlord= 0 then 'HUD-5380.pdf'
+when Tenant_Landlord.Tenant_Landlord= 1 then ''
+else '' end _FILE_NL2_
 ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                 rsc.chairperson                             chairperson,
                 rsc.viceChairperson                         viceChairperson,
@@ -51,7 +54,7 @@ SELECT TOP 2 'TAL_Termination' _LIST_
             , Review58SUMM.dteffective2b 'Review58EffDate'
             , ISNULL(Tenant_Landlord.Tenant_Landlord,-1) Tenant_Landlord
             , case when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(Tenant.sFirstName,'')+' '+ IsNull(Tenant.sLastName,''))
-            when Tenant_Landlord.Tenant_Landlord= 0 then 'Landlord: ' + LTrim(RTrim(IsNull(O.sFirstName, '') + CASE When IsNull(O.sFirstName, '') = IsNull(O.uLastName, '') Then '' Else ' ' + IsNull(O.uLastName, '') END))
+            when Tenant_Landlord.Tenant_Landlord= 0 AND Tenant.sUnitCode <> 'PENDING' then 'Landlord: ' + LTrim(RTrim(IsNull(O.sFirstName, '') + CASE When IsNull(O.sFirstName, '') = IsNull(O.uLastName, '') Then '' Else ' ' + IsNull(O.uLastName, '') END))
             else  '' end  LLName
             , case when Tenant_Landlord.Tenant_Landlord= 1 then 'Tenant'
             when Tenant_Landlord.Tenant_Landlord= 0 then 'Landlord'
@@ -64,8 +67,10 @@ else  '' end  ToName
             , case when Tenant_Landlord.Tenant_Landlord=0 then  isnull(tenant_addrr.tenantaddress,'')
  when Tenant_Landlord.Tenant_Landlord= 1 then isnull(Owner_addrr.Owneraddress,'')
  else  '' end MailAddress
+            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', and no further housing assistance payments will be made on your behalf. As of '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN CAST(GetDate() as varchar) ELSE cast('#FillDate12#' as varchar) END + ', you will become responsible for the full amount of the rent, which is ' + cast(REVIEW58VOUCH.dCR12p as varchar) + ' per month.' END 'InUnitText'
 FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
 INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+LEFT JOIN TenStatus TenStatus ON (Tenant.iStatus = TenStatus.iStatus)
 INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
 LEFT JOIN h8Vouch Review58vouch ON (Review58SUMM.hMy = Review58vouch.hsum)
 LEFT JOIN H8Unit H8U on H8U.hUnit = Unit.hMy
@@ -101,7 +106,7 @@ LEFT JOIN Person O on O.hMy = H8U.hVendorLtr
             cross join board_commishes_footer_RSC rsc
 WHERE 1 = 1
 AND p.itype = 3
-
+AND Review58SUMM.dteffective2b=(select max(Review58SUMM.dteffective2b) from h8Summ Review58SUMM INNER JOIN tenant t on (t.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0) WHERE t.scode = tenant.scode )
  #conditions#
 ORDER BY Review58EffDate Desc
 // ORDER BY  CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END ASC

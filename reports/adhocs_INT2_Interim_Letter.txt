@@ -88,11 +88,11 @@ DeniedPerson Multiline
 C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
 0    ,T    ,"Field11"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field11#') ",     ,N    ,   ,Y
 0    ,T    ,"Field12"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
-L    ,T    ,"FillText12"    ,"Change of HOH Denied?"    ,  ,"True^False"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText12"    ,"Change of HOH Denied?"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
 0    ,T    ,"FillText13"    ,"Comments (English)"    ,  ,""    ,"",     ,N    ,   ,Y
 0    ,T    ,"FillText14"    ,"Comments (Spanish)"    ,  ,""    ,"",     ,N    ,   ,Y
-L    ,T    ,"FillText15"    ,"Addition of Adult to Household denied"    ,  ,"True^False"    ,"",     ,N    ,   ,Y
-L    ,T    ,"FillText16"    ,"Addition of Child to Household denied"    ,  ,"True^False"    ,"",     ,N    ,   ,Y
-L    ,T    ,"FillText17"    ,"Addition to Household denied (Criminal)"    ,  ,"True^False"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText15"    ,"Addition of Adult to Household denied"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText16"    ,"Addition of Child to Household denied"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText17"    ,"Addition to Household denied (Criminal)"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
 0    ,T    ,"FillText11"    ,"Criminal Name"    ,  ,""    ,"",     ,N    ,   ,Y
 //End Filter

@@ -1,0 +1,81 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_WLR_Placement_Update_Info.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/18/2019 - Created by jonathan
+    09/18/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+WLR Placement Update info
+//End Title
+
+//Select Primary
+ SELECT DISTINCT TOP 1  'Y_WLR_Placement_Update.docx' _FILE_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , wlwaitlist.sCode 'WLCode'
+              , wlwaitlist.sDesc 'WLDesc'
+              , ltrim(rtrim(wlwaitlist.sPropCode)) 'WLPropCode'
+              , WLTen.scode 'tcode'
+              , WLTen.sFirstName + ' ' + WLTen.sLastName 'ToName'
+              , case when isnull(WLTen.saddr1, '') <> '' then ltrim(rtrim(WLTen.saddr1)) + '^' else '' end + case when isnull(WLTen.saddr2, '') <> '' then ltrim(rtrim(WLTen.saddr2)) + '^' else '' end + case when isnull(WLTen.sCity, '') <> '' then ltrim(rtrim(WLTen.sCity)) else '' end + case when isnull(WLTen.sState, '') = '' and isnull(WLTen.sZipCode, '') = '' then ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) else ', ' + ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) end 'MailAddress'
+              , wla.dtapplied 'AppAppliedDate'
+              , CASE WHEN ISNULL(Review58SUMM.sPHACode, '') = '' THEN REVIEW58H8PARAM.SPCODE ELSE Review58SUMM.sPHACode END 'Review58PHACode'
+              , Review58SUMM.dteffective2b 'Review58EffDate'
+              , CASE WHEN ISNULL(Review58SUMM.sAgencyName1a, '') = '' THEN REVIEW58H8PARAM.SPName ELSE Review58SUMM.sAgencyName1a END 'Review58AgencyName'
+              , Case WHEN ISNULL('#FillText11#','') <> '' THEN char(13)+char(10)+char(13)+char(10)+'#FillText11#' +char(13)+char(10)+char(13)+char(10) ELSE '' END 'Notes'
+              , GETDATE() 'LetterDate'
+ FROM  Property p  INNER JOIN h8Summ ON (p.hMy = h8Summ.hProp)  AND (h8Summ.bMasterRecd = -1)
+ LEFT JOIN H8PARAM H8PARAM ON (1=1)
+ INNER JOIN Tenant wlTenant ON (wlTenant.hProperty = p.hMy)
+ INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
+ INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+ INNER JOIN h8Summ Review58SUMM ON (p.hmy = Review58SUMM.hprop)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+ LEFT JOIN H8PARAM REVIEW58H8PARAM ON (1=1)
+ cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  Review58SUMM.dteffective2b DESC
+//End Select Primary
+
+//Format
+AppAppliedDate MM/DD/YYYY
+Review58EffDate MM/DD/YYYY
+LetterDate MMMM DD, YYYY
+MailAddress MultiLine
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"Field10"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
+0    ,T    ,"Field13"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field13#') ",     ,N    ,   ,Y
+R    ,A    ,DAT16:DAT26    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wla.dtapplied, 101) as DateTime)  Between  '#dat16#' AND '#dat26#'",     ,N    ,   ,Y
+0    ,T    ,"FillText11"    ,"Notes"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

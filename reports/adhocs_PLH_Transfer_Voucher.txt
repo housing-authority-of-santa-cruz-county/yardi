@@ -1,0 +1,83 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_PLH_Transfer_Voucher.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/16/2019 - Created by jonathan
+    09/16/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+//End Options
+
+//Title
+PLH Transfer Voucher
+//End Title
+
+//Select Primary
+ SELECT  'Y_PLH_Transfer_Voucher_docx' _FILE_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , p.sCode 'PropCode'
+              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'TenFirstLast'
+              , tenant.sCode 'TenCode'
+              , unit.sCode 'UnitCode'
+              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'TenFullAddress'
+              , CASE WHEN ISNULL(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),'')='' THEN ''  ELSE CASE WHEN Len(rTrim(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ','')))=10   THEN '(' + Left(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),3) + ') ' + substring(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),4,3)+ '-' + Right(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),4) WHEN Len(rTrim(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ','')))=7 THEN Left(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),3) + '-'+ Right(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),4) WHEN Len(rTrim(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ','')))>10 THEN '(' + Left(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),3) + ') ' + substring(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),4,3)+ '-' + substring(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),7,4) + ' x' +substring(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''),11,len(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ',''))-10)  ELSE rTrim(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tenant.sPhoneNum1,'(',''),'-',''),'x',''),')',''),' ','')) END END 'Phone_Home'
+              , Review58SUMM.dteffective2b 'Review58EffDate'
+              , '#FillText11#' 'ToName'
+              , '#FillText12#' 'MailAddress'
+              , GETDATE() 'LetterDate'
+              , Case When Review58SUMM.Hstpr > 0 Then Stpr.Sagencyname Else Pha.Sagencyname End Agency,
+  Case When (Isnull(Vt.Dtvoucherissue,'')='' Or Vt.Dtvoucherissue='') Then  Review58SUMM.Dteffective2B  Else Vt.Dtvoucherissue End Issuedate,
+ Case when (isnull((SELECT  MIN(dtVoucherExpire)  FROM H8VoucherTrackingDet vtd1 WHERE vtd1.hVoucherTracking = vt.hMy) ,'')='' or
+ (SELECT  MIN(dtVoucherExpire)  FROM H8VoucherTrackingDet vtd1  WHERE vtd1.hVoucherTracking = vt.hMy)='')
+ then  Review58SUMM.dtEffective2b+60  else  (SELECT  MIN(dtVoucherExpire)  FROM H8VoucherTrackingDet vtd1 WHERE vtd1.hVoucherTracking = vt.hMy)  end  exp
+ FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+ INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+ INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+ Left Outer Join Person E On E.Hmy = Review58SUMM.Hcaseworker And E.Ipersontype = 79
+           Left Outer Join H8Vouch Vou On Vou.Hsum = Review58SUMM.Hmy
+           Left Join H8Param Pha On Pha.Hchart = 0
+	   Left Join H8Stpr Stpr On Review58SUMM.Hstpr =  Stpr.Hmy
+	     Left Join H8VoucherTracking vt on vt.htenant = Review58SUMM.HTENANT
+       cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  p.sCode ASC
+//End Select Primary
+
+//Format
+TenFullAddress Multiline
+Phone_Home Phone
+Review58EffDate MM/DD/YYYY
+LetterDate MMMM DD, YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
+0    ,T    ,"Field12"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
+0    ,T    ,"Field13"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field13#') ",     ,N    ,   ,Y
+0    ,T    ,"FillText11"    ,"Recipient Name"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText12"    ,"Recipient Address"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

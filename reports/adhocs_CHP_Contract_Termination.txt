@@ -25,41 +25,51 @@ CHP Contract Termination
 //End Title
 
 //Select Primary
- SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_
- ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
-                 rsc.chairperson                             chairperson,
-                 rsc.viceChairperson                         viceChairperson,
-                 rsc.boardmember1                            boardmember1,
-                 rsc.boardmember2                            boardmember2,
-                 rsc.boardmember3                            boardmember3,
-                 rsc.boardmember4                            boardmember4,
-                 rsc.boardmember5                            boardmember5,
-                 rsc.execDirector                            execDirector
-              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'EndDate'
-              , p.sCode 'PropCode'
-              , unit.sCode 'UnitCode'
-              , tenant.sCode 'TenCode'
-              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
-              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10) else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10) else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
-              , pr.sFedName 'LLName'
-              , pr.saddr1 + CASE
-              WHEN pr.saddr2 = null THEN ''
-              WHEN pr.saddr2 = '' THEN ''
-              ELSE char(10) + pr.saddr2
-              END + char(10) + pr.scity + ', ' + pr.sstate + ' ' + pr.szipcode 'LLAddress'
-               , case when isnull(UAddr.saddr1, '') <> '' then ltrim(rtrim(UAddr.saddr1)) + char(10) else '' end + case when isnull(UAddr.saddr2, '') <> '' then ltrim(rtrim(UAddr.saddr2)) + char(10) else '' end + case when isnull(UAddr.saddr3, '') <> '' then ltrim(rtrim(UAddr.saddr3)) + char(10) else '' end + case when isnull(UAddr.sCity, '') <> '' then ltrim(rtrim(UAddr.sCity)) else '' end + case when isnull(UAddr.sState, '') = '' and isnull(UAddr.sZipCode, '') = '' then ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) else ', ' + ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) end 'UnitFullAddress'
-              , GETDATE() 'LetterDate'
- FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
- LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
- INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
- left join h8summ h8 on h8.htenant = Tenant.hmyperson
- left join vendor v on v.hmyperson = h8.hvendor
- left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
- cross join board_commishes_footer_RSC rsc
+SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_
+,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                rsc.chairperson                             chairperson,
+                rsc.viceChairperson                         viceChairperson,
+                rsc.boardmember1                            boardmember1,
+                rsc.boardmember2                            boardmember2,
+                rsc.boardmember3                            boardmember3,
+                rsc.boardmember4                            boardmember4,
+                rsc.boardmember5                            boardmember5,
+                rsc.execDirector                            execDirector
+             , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'EndDate'
+             , p.sCode 'PropCode'
+             , unit.sCode 'UnitCode'
+             , tenant.sCode 'TenCode'
+             , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
+             , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10)
+                    when isnull(tenant.saddr1,'') = 'Pending' then wla.sField1 + char(10)
+                    else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10) else '' end +
+                    case when isnull(tenant.sCity, '') = 'Pending' then wla.sField2
+                    else case when isnull(tenant.sCity, '') <> '' AND isnull(tenant.sCity, '') <> 'Pending' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE))
+                    end end 'MailAddress'
+             , pr.sFedName 'LLName'
+             , pr.saddr1 + CASE
+             WHEN pr.saddr2 = null THEN ''
+             WHEN pr.saddr2 = '' THEN ''
+             ELSE char(10) + pr.saddr2
+             END + char(10) + pr.scity + ', ' + pr.sstate + ' ' + pr.szipcode 'LLAddress'
+              , case when isnull(UAddr.saddr1,'') = 'Pending' then wla.sField1 + char(10)
+                     when isnull(UAddr.saddr1, '') <> '' then ltrim(rtrim(UAddr.saddr1)) + char(10)
+                     else '' end + case when isnull(UAddr.saddr2, '') <> '' then ltrim(rtrim(UAddr.saddr2)) + char(10) else '' end +
+                     case when isnull(UAddr.sCity, '') = 'Pending' then wla.sField2 else
+                     case when isnull(UAddr.saddr3, '') <> '' then ltrim(rtrim(UAddr.saddr3)) + char(10) else '' end + case when isnull(UAddr.sCity, '') <> '' then ltrim(rtrim(UAddr.sCity)) else '' end + case when isnull(UAddr.sState, '') = '' and isnull(UAddr.sZipCode, '') = '' then ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) else ', ' + ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) end end 'UnitFullAddress'
+             , GETDATE() 'LetterDate'
+FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
+INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+left JOIN wlapplic wla ON (wla.htenant = tenant.hmyperson)
+left join h8summ h8 on h8.htenant = Tenant.hmyperson
+left join vendor v on v.hmyperson = h8.hvendor
+left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
+cross join board_commishes_footer_RSC rsc
 
- WHERE 1 = 1
- AND p.itype = 3
- AND v.uLastName IS NOT NULL
+WHERE 1 = 1
+AND p.itype = 3
+AND v.uLastName IS NOT NULL
  #conditions#
 //End Select Primary
 

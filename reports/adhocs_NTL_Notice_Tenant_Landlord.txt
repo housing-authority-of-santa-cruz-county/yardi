@@ -69,7 +69,7 @@ NTL Notice Tenant Landlord
               , '#FillText12#' 'Reasons2'
               , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
               , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10) else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10) else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
-              , pr.sFedName 'LLName'
+              , CASE WHEN isnull(pr.sFedName,'') <> '' THEN pr.sFedName ELSE pr.UP_LASTNAME END 'LLName'
               , pr.saddr1 + CASE
               WHEN pr.saddr2 = null THEN ''
               WHEN pr.saddr2 = '' THEN ''
@@ -78,7 +78,7 @@ NTL Notice Tenant Landlord
               , GETDATE() 'LetterDate'
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
- INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+ INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)
  left join vendor v on v.hmyperson = Review58SUMM.hvendor
  left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
  cross join board_commishes_footer_RSC rsc

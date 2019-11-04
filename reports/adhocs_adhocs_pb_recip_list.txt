@@ -1,0 +1,75 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_adhocs_pb_recip_list.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    10/22/2019 - Created by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+PB Recip List
+//End Title
+
+//Select Primary
+ SELECT DISTINCT 'y_PB_Recipient_List.docx' _FILE_
+              ,'recips' 									 																							        _GRID_
+              , wlwaitlist.sCode 'WLCode'
+              , wlwaitlist.sDesc 'wlname'
+              , GETDATE() 'LetterDate'
+ FROM  Tenant wlTenant
+ INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
+ INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN WLApplicPrefs  ON (WLApplicPrefs.HWLApplic = wla.hMy)
+ LEFT JOIN WLPreference  ON (WLPreference.hMy = WLApplicPrefs.HPreference)
+ WHERE 1 = 1
+ #conditions#
+//End Select Primary
+
+//GRID recips
+select WLTen.sLastName + ', ' + WLTen.sFirstName 'recipname'
+      , wla.dtapplied 'effdate'
+      , CASE WHEN ISNULL(wla.shohsex, 'No') = 'F' THEN 'Female' ELSE CASE WHEN ISNULL(wla.shohsex, 'No') = 'M' THEN 'Male' END END 'gender'
+      , CASE WHEN isNull(wla.sField0,'') <> '' THEN wla.sField0 ELSE 'English' END 'language'
+    FROM  Tenant wlTenant
+    INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
+    INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+    INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+    LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+    LEFT JOIN WLApplicPrefs  ON (WLApplicPrefs.HWLApplic = wla.hMy)
+    LEFT JOIN WLPreference  ON (WLPreference.hMy = WLApplicPrefs.HPreference)
+    WHERE 1 = 1
+    #conditions#
+    ORDER BY wla.dtapplied ASC
+
+//End SELECT
+
+
+//Format
+effdate MM/DD/YYYY
+LetterDate MMMM DD, YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"Field110"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field110#') ",     ,N    ,   ,Y
+0    ,T    ,"Field10"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
+R    ,A    ,DAT15:DAT25    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wla.dtapplied, 101) as DateTime)  Between  '#dat15#' AND '#dat25#'",     ,N    ,   ,Y
+R   ,I    ,"VAL16:VAL26"    ,"Score"    ,  ,""    ,"wlwaitlistwlapplic.iscorepoints Between #VAL16# AND #VAL26#",     ,N    ,   ,Y
+L    ,T    ,"FillText11"    ,"Complex Name"    ,  ,"Regular S8^El Centro^Sunrise^St. Stephens^Resetar^Pippin Orchards"    ,"",     ,N    ,   ,Y
+0    ,T    ,"Field119"    ,"Preference Code"    ,  ,""    ,"LTRIM(RTRIM(ISNULL( WLPreference.sCode , ''))) like LTRIM(RTRIM(ISNULL('%#Field119#%', ' ')))",     ,N    ,   ,Y
+//End Filter
