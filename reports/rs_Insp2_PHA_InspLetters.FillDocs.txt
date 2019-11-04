@@ -1,0 +1,648 @@
+//VISTA
+//Notes
+  Copyright (c) 2015 by Yardi Systems Inc.
+  NAME
+    rs_Insp2_PHA_InspLetters.FillDocs.txt
+  DESCRIPTION
+    This is sample FillDocs script for the inspection schedule letter
+  NOTES
+  CREATED
+   Shraddha 04/27/16
+  Modified
+   Rohit P- 03/15/17 TR440268: Added Inspector name column, added ISNULL checks for tenant/LandLord address.
+//End Notes
+
+//Database
+FILLDOCS
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+Inspection Letters FillDoc
+//End Title
+
+//Command Before
+SELECT temp.* INTO #TEMP
+FROM fn_insp2_PHA_getInspections('','#P.hMy#','#u.hMy#','#r.hMy#','#ma.hMy#','#@@username#','#InspId#') temp
+INNER JOIN (Select 'Property' sEntity,3 itype
+                  UNION
+                  Select 'Unit' sEntity,4 itype
+                  Union
+                  Select 'Room' sEntity,567 itype
+                  UNION
+                  Select 'Asset' sEntity,28 itype
+                  ) Entity on Entity.itype = temp.iType
+where
+1=1
+#Condition1#
+//END Command
+
+//Select PRIMARY
+SELECT
+  case  when '#RptType#' ='Schedule' then 'y_Insp2_PHA_InspLetters_Scheduled.docx'
+  when '#RptType#' ='Pass' then 'y_Insp2_PHA_InspLetters_Pass.docx'
+  when '#RptType#' ='Pass - Notes' then 'y_Insp2_PHA_InspLetters_Pass_Notes.docx'
+  when '#RptType#' = 'Fail' then 'y_Insp2_PHA_InspLetters_Fail.docx'
+  when '#RptType#' = 'Fail - Notes' then 'y_Insp2_PHA_InspLetters_Fail_Notes.docx'
+  When '#RptType#' = 'Inconclusive' then  'y_Insp2_PHA_InspLetters_Inconclusive.docx'
+  When '#RptType#' = 'Inconclusive - Notes' then 'y_Insp2_PHA_InspLetters_Inconclusive_Notes.docx'
+  Else 'y_Insp2_PHA_InspLetters_Inconclusive_Notes.docx'
+  end
+  "_FILE_"
+  ,S.hStpr
+  ,ISNULL(H8SP.sAgencyName, ISNULL(PHA.sAgencyName,'')) PHAsAgencyName
+	,ISNULL(H8SP.sAddr1, ISNULL(PHA.sAddr1,'')) PHAsAddr1
+	,ISNULL(H8SP.sAddr2, ISNULL(PHA.sAddr2,'')) PHAsAddr2
+	,ISNULL(H8SP.sCity, ISNULL(PHA.sCity,'')) PHAsCity
+	,ISNULL(H8SP.sState, ISNULL(PHA.sState,'')) PHAsState
+	,ISNULL(H8SP.sZipCode, ISNULL(PHA.sZipCode,'')) PHAsZip
+	,coalesce('Phone: '+case when isnull(H8SP.sPhone1,'')<> '' then H8SP.sPhone1 else Null end ,'Phone: '+case when isnull(PHA.sPhone1,'')<> '' then PHA.sPhone1 else Null end,'') PHAsPhone1
+	,coalesce('Fax: '+case when isnull(H8SP.sFax,'')<> '' then H8SP.sFax else Null end ,'Fax: '+case when isnull(PHA.sFax,'')<> '' then PHA.sFax else Null end,'') PHAsFax
+	,coalesce('   *    TTY:'+case when isnull(H8SP.sTTY,'')<> '' then H8SP.sTTY else Null end ,'   *    TTY:'+case when isnull(PHA.sTTY,'')<> '' then PHA.sTTY else Null end,'') PHAsTTY
+	,coalesce('E-mail: '+case when isnull(H8SP.sEmail,'')<> '' then H8SP.sEmail else Null end ,'E-mail: '+case when isnull(PHA.sEmail,'')<> '' then PHA.sEmail else Null end,'') PHAsEmail
+	,coalesce('Web: '+case when isnull(H8SP.sURL,'')<> '' then H8SP.sURL else Null end ,'Web: '+case when isnull(PHA.sURL,'')<> '' then PHA.sURL else Null end,'') PHAsURL
+	,ISNULL(Tenant_Landlord.Tenant_Landlord,-1) Tenant_Landlord
+  ,I.hMy InspId,
+  I.iReinspNum ReInspNumber,
+  It.sType InspType,
+  I.dtRequest,
+  I.dtDue,
+  I.dtScheduled,
+  I.iDuration,
+  RTRIM(Case  when usersetting.SDATEMASK='MM/DD/YYYY' then Convert(varchar(11),i.dtInspected,101)
+		when usersetting.SDATEMASK='DD/MM/YYYY' then RTRIM(Replace(Convert(varchar(11), i.dtInspected,105),'-','/'))
+		when usersetting.SDATEMASK='YYYY/MM/DD' then RTRIM(Replace(Convert(varchar(11), i.dtInspected,121),'-','/'))
+		when usersetting.SDATEMASK='DD.MM.YYYY' then RTRIM(Convert(varchar(11), i.dtInspected,104))
+		else    Convert(varchar(11), i.dtInspected,101)
+  end  + ' ' + Case when DATEPART(hour,i.dtInspected)>0 OR DATEPART(MINUTE ,i.dtInspected)>0 THEN Right( '0'+ LTRIM(RIGHT(CONVERT(VARCHAR,i.dtInspected,100 ),7)),7)  ELSE '' END ) dtInspected,
+  I.sStatus,
+  Isnull(I.sSeverity,'') sSeverity,
+  case when len(I.sSeverity)> 0 and Isnull(I.sSeverity,'') <> '' then 1 else 0 end sSeveritylength,
+  I.dtNotified,
+  I.dtActionDue,
+  P.sCode PsCode,
+  P.sAddr1 Property,
+  U.sCode UsCode,
+  U.IBEDROOMS,
+  T.hMyPerson ThMy,
+  T.sCode TsCode,
+  T.sLastName LNameT,
+  T.sFirstName FNameT,
+  isnull(T.sAddr1,'') MailAdd1,
+  isnull(T.sAddr2,'') MailAdd2,
+  isnull(T.sCity,'') MailCity,
+  isnull(T.sState,'') MailState,
+  isnull(T.sZipCode,'') MailZip,
+  T.sPhoneNum1,
+  U.hMy UhMy,
+  CASE
+        WHEN I.iType=3 THEN isnull(p.sAddr1,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(p.sAddr1,'')
+  ELSE isnull(A.sAddr1,'') END  InspAddress1,
+  CASE  WHEN I.iType=3 THEN isnull(p.sAddr2,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(p.sAddr2,'')
+  ELSE isnull(A.sAddr2,'') END InspAddress2,
+  CASE  WHEN I.iType=3 THEN isnull(p.sAddr3,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(p.sAddr3,'')
+  ELSE isnull(A.sAddr3,'') END InspAddress3,
+  CASE  WHEN I.iType=3 THEN isnull(p.sAddr4,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(p.sAddr4,'')
+  ELSE isnull(A.sAddr4,'') END InspAddress4,
+  isnull(propcntinf.scode,'') countrycode,
+  CASE WHEN I.iType=3 OR (I.iType=28 and temp.hUnit IS NULL) THEN isnull(p.sCity,'')
+     ELSE isnull(A.sCity,'')
+  END InspCity,
+ CASE WHEN I.iType=3 OR (I.iType=28 and temp.hUnit IS NULL) THEN isnull(p.sState,'')
+     ELSE isnull(A.sState,'')
+  END InspState,
+ CASE WHEN I.iType=3 OR (I.iType=28 and temp.hUnit IS NULL) THEN isnull(p.sZipCode,'')
+     ELSE isnull(A.sZipCode,'')
+  END InspZip,
+ CASE  WHEN I.iType=3 THEN isnull(propcntinf.scode,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(propcntinf.scode,'')
+  ELSE isnull(Addrcntinf.scode,'')
+  END InspCountry,
+  Case when I.iType = 3 then isnull(propcntinf.iaddrtype,2)
+    when I.iType = 28 and temp.hUnit IS NULL then isnull(propcntinf.iaddrtype,2)
+  else isnull(Addrcntinf.iaddrtype,2) END Addresstypes,
+  E.uCode ECode,
+ LTRIM(RTRIM(ISNULL(E.sFirstName,'')+ ' ' + ISNULL(E.uLastName ,'')))Inspector,
+  V.uCode VCode,
+  V.uLastName VendLastName,
+  V.sFirstName VendFirstName,
+  V.sAddr1 VendAdd1,
+  V.sAddr2 VendAdd2,
+  V.sCity VendCity,
+  V.sState VendState,
+  V.sZipCode VendZip,
+  V.sPhoneNum0 VendPhone,
+  CASE
+          WHEN '#RptType#' ='Schedule' THEN LTRIM(RTRIM(ISNULL(I.sScheduleNotes,'')))
+          ELSE LTRIM(RTRIM(ISNULL(I.sResultNotes,'')))
+  END ResultsMemo,
+  O.hMy OwnHMy,
+  O.uLastName OwnLName,
+  O.sFirstName OwnFName,
+  O.sAddr1 OAdd1,
+  O.sAddr2 OAdd2,
+  O.sCity OCity,
+  O.sState OState,
+  O.sZipCode OZip,
+  O.sPHONENUM0 OPhone,
+  IsNull(H8CT.sCode,'Unknown') CensusTract,
+  H8P.sProgramDefault PropertyProgram,
+  Case I.iType when 3 then 'Property' when 4 then 'Unit' when 567 then 'Room' when 28 then 'Asset' End sEntity,
+  I.hPointer ihPointer,
+  0 InspID2,
+  case when Tenant_Landlord.Tenant_Landlord= 0 then Ltrim(Isnull(T.sFirstName,'')+' '+ IsNull(T.sLastName,''))
+  when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(O.sFirstName,'')+' '+ IsNull(O.uLastName,''))
+  else  '' end  ToName,
+  GETDATE()  LetterDate,
+  I.dtScheduled dtScheduledDate,
+  LTRIM( RIGHT(Convert(Varchar(20),I.dtScheduled,100),7)) dtScheduledTime,
+
+   /*InspectionAddress MultiLine*/
+  CASE
+        WHEN I.iType=3 THEN isnull(p.sAddr1,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(p.sAddr1,'')
+  ELSE isnull(A.sAddr1,'') END
+  +'^'+
+  CASE  WHEN I.iType=3 THEN isnull(p.sAddr2,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(p.sAddr2,'')
+  ELSE isnull(A.sAddr2,'') END
+  +'^'+
+  RTRIM(CASE WHEN I.iType=3 OR (I.iType=28 and temp.hUnit IS NULL) THEN isnull(p.sCity,'')
+     ELSE isnull(A.sCity,'')
+  END)
+  +', '+
+ CASE WHEN I.iType=3 OR (I.iType=28 and temp.hUnit IS NULL) THEN isnull(p.sState,'')
+     ELSE isnull(A.sState,'')
+  END
+  +' '+
+ CASE WHEN I.iType=3 OR (I.iType=28 and temp.hUnit IS NULL) THEN isnull(p.sZipCode,'')
+     ELSE isnull(A.sZipCode,'')
+  END
+  +'^'+
+ CASE  WHEN I.iType=3 THEN isnull(propcntinf.scode,'')
+        WHEN I.iType=28 and temp.hUnit IS NULL THEN isnull(propcntinf.scode,'')
+  ELSE isnull(Addrcntinf.scode,'')
+  END InspectionAddress,
+ case when Tenant_Landlord.Tenant_Landlord=0 then  isnull(tenant_addrr.tenantaddress,'')
+  when Tenant_Landlord.Tenant_Landlord= 1 then isnull(Owner_addrr.Owneraddress,'')
+  else  '' end MailAddress,
+  COALESCE(H8S_address.H8Saddress,PHA_address.PHAAddress,'') HeaderAddress,
+  case len(isnull(H8SP.sPhone1,'')) when 0 then
+      case  LEN(ISNULL(PHA.SPHONE1,'')) when  0 then '' else 'Phone: '+
+         Case  When substring(PHA.SPHONE1,4,1)='-' or substring(PHA.SPHONE1,1,1)='(' Then PHA.SPHONE1
+                        When len(rtrim(PHA.SPHONE1))>7 and len(rtrim(PHA.SPHONE1))< 11 Then '(' + substring(PHA.SPHONE1,1,3) + ')' + substring(PHA.SPHONE1,4,3) + '-' + substring(PHA.SPHONE1,7,7)
+                        When len(rtrim(PHA.SPHONE1))>10 Then '(' + substring(PHA.SPHONE1,1,3) + ')' + substring(PHA.SPHONE1,4,3) + '-' + substring(PHA.SPHONE1,7,4)+ ' x' + substring (PHA.SPHONE1, 11,5)
+                        When len(PHA.SPHONE1)>3 Then substring(PHA.SPHONE1,1,3) + '-' + substring(PHA.SPHONE1,4,5)
+               Else PHA.SPHONE1
+            End
+      end
+ else 'Phone: '+
+			Case  When substring(H8SP.SPHONE1,4,1)='-' or substring(H8SP.SPHONE1,1,1)='(' Then H8SP.SPHONE1
+                        When len(rtrim(H8SP.SPHONE1))>7 and len(rtrim(H8SP.SPHONE1))< 11 Then '(' + substring(H8SP.SPHONE1,1,3) + ')' + substring(H8SP.SPHONE1,4,3) + '-' + substring(H8SP.SPHONE1,7,7)
+                        When len(rtrim(H8SP.SPHONE1))>10 Then '(' + substring(H8SP.SPHONE1,1,3) + ')' + substring(H8SP.SPHONE1,4,3) + '-' + substring(H8SP.SPHONE1,7,4)+ ' x' + substring (H8SP.SPHONE1, 11,5)
+                        When len(H8SP.SPHONE1)>3 Then substring(H8SP.SPHONE1,1,3) + '-' + substring(H8SP.SPHONE1,4,5)
+               Else H8SP.SPHONE1
+            End
+ end
+ + case len(isnull(H8SP.sFax,'')) when 0 then
+      case  LEN(ISNULL(PHA.sFax,'')) when  0 then '' else '^'+'Fax: '+
+         Case  When substring(PHA.sFax,4,1)='-' or substring(PHA.sFax,1,1)='(' Then PHA.sFax
+                        When len(rtrim(PHA.sFax))>7 and len(rtrim(PHA.sFax))< 11 Then '(' + substring(PHA.sFax,1,3) + ')' + substring(PHA.sFax,4,3) + '-' + substring(PHA.sFax,7,7)
+                        When len(rtrim(PHA.sFax))>10 Then '(' + substring(PHA.sFax,1,3) + ')' + substring(PHA.sFax,4,3) + '-' + substring(PHA.sFax,7,4)+ ' x' + substring (PHA.sFax, 11,5)
+                        When len(PHA.sFax)>3 Then substring(PHA.sFax,1,3) + '-' + substring(PHA.sFax,4,5)
+               Else PHA.sFax
+            End
+     end
+   else '^'+'Fax: '+
+         Case  When substring(H8SP.sFax,4,1)='-' or substring(H8SP.sFax,1,1)='(' Then H8SP.sFax
+                        When len(rtrim(H8SP.sFax))>7 and len(rtrim(H8SP.sFax))< 11 Then '(' + substring(H8SP.sFax,1,3) + ')' + substring(H8SP.sFax,4,3) + '-' + substring(H8SP.sFax,7,7)
+                        When len(rtrim(H8SP.sFax))>10 Then '(' + substring(H8SP.sFax,1,3) + ')' + substring(H8SP.sFax,4,3) + '-' + substring(H8SP.sFax,7,4)+ ' x' + substring (H8SP.sFax, 11,5)
+                        When len(H8SP.sFax)>3 Then substring(H8SP.sFax,1,3) + '-' + substring(H8SP.sFax,4,5)
+               Else H8SP.sFax
+            End
+   end
+  +' '+ + case len(isnull(H8SP.sTTY,'')) when 0 then
+      case  LEN(ISNULL(PHA.sTTY,'')) when  0 then '' else '   *    TTY:'+
+         Case  When substring(PHA.sTTY,4,1)='-' or substring(PHA.sTTY,1,1)='(' Then PHA.sTTY
+                        When len(rtrim(PHA.sTTY))>7 and len(rtrim(PHA.sTTY))< 11 Then '(' + substring(PHA.sTTY,1,3) + ')' + substring(PHA.sTTY,4,3) + '-' + substring(PHA.sTTY,7,7)
+                        When len(rtrim(PHA.sTTY))>10 Then '(' + substring(PHA.sTTY,1,3) + ')' + substring(PHA.sTTY,4,3) + '-' + substring(PHA.sTTY,7,4)+ ' x' + substring (PHA.sTTY, 11,5)
+                        When len(PHA.sTTY)>3 Then substring(PHA.sTTY,1,3) + '-' + substring(PHA.sTTY,4,5)
+               Else PHA.sTTY
+            End
+      end
+   else '   *    TTY:'+
+           Case  When substring(H8SP.sTTY,4,1)='-' or substring(H8SP.sTTY,1,1)='(' Then H8SP.sTTY
+                        When len(rtrim(H8SP.sTTY))>7 and len(rtrim(H8SP.sTTY))< 11 Then '(' + substring(H8SP.sTTY,1,3) + ')' + substring(H8SP.sTTY,4,3) + '-' + substring(H8SP.sTTY,7,7)
+                        When len(rtrim(H8SP.sTTY))>10 Then '(' + substring(H8SP.sTTY,1,3) + ')' + substring(H8SP.sTTY,4,3) + '-' + substring(H8SP.sTTY,7,4)+ ' x' + substring (H8SP.sTTY, 11,5)
+                        When len(H8SP.sTTY)>3 Then substring(H8SP.sTTY,1,3) + '-' + substring(H8SP.sTTY,4,5)
+               Else H8SP.sTTY
+            End
+   end
+  + case len(isnull(H8SP.sEmail,'')) when 0 then
+      case  LEN(ISNULL(PHA.sEmail,'')) when  0 then '' else '^'+'E-mail: '+PHA.sEmail end
+   else '^'+'E-mail: '+H8SP.sEmail end
+  +' '+ case len(isnull(H8SP.sTTY,'')) when 0 then
+      case  LEN(ISNULL(PHA.sTTY,'')) when  0 then '' else '   *    TTY:'+
+         Case  When substring(PHA.sTTY,4,1)='-' or substring(PHA.sTTY,1,1)='(' Then PHA.sTTY
+                        When len(rtrim(PHA.sTTY))>7 and len(rtrim(PHA.sTTY))< 11 Then '(' + substring(PHA.sTTY,1,3) + ')' + substring(PHA.sTTY,4,3) + '-' + substring(PHA.sTTY,7,7)
+                        When len(rtrim(PHA.sTTY))>10 Then '(' + substring(PHA.sTTY,1,3) + ')' + substring(PHA.sTTY,4,3) + '-' + substring(PHA.sTTY,7,4)+ ' x' + substring (PHA.sTTY, 11,5)
+                        When len(PHA.sTTY)>3 Then substring(PHA.sTTY,1,3) + '-' + substring(PHA.sTTY,4,5)
+               Else PHA.sTTY
+            End
+      end
+   else '   *    TTY:'+
+           Case  When substring(H8SP.sTTY,4,1)='-' or substring(H8SP.sTTY,1,1)='(' Then H8SP.sTTY
+                        When len(rtrim(H8SP.sTTY))>7 and len(rtrim(H8SP.sTTY))< 11 Then '(' + substring(H8SP.sTTY,1,3) + ')' + substring(H8SP.sTTY,4,3) + '-' + substring(H8SP.sTTY,7,7)
+                        When len(rtrim(H8SP.sTTY))>10 Then '(' + substring(H8SP.sTTY,1,3) + ')' + substring(H8SP.sTTY,4,3) + '-' + substring(H8SP.sTTY,7,4)+ ' x' + substring (H8SP.sTTY, 11,5)
+                        When len(H8SP.sTTY)>3 Then substring(H8SP.sTTY,1,3) + '-' + substring(H8SP.sTTY,4,5)
+               Else H8SP.sTTY
+            End
+   end
++ case len(isnull(H8SP.sURL,'')) when 0 then
+       case  LEN(ISNULL(PHA.sURL,'')) when  0 then '' else '^'+'Web: '+PHA.sURL end
+       else '^'+'Web: '+H8SP.sURL end  Contactdetail
+ FROM Inspection2 I
+     INNER JOIN #TEMP temp on temp.hInspection=i.hmy
+     INNER JOIN Property P ON P.hMy = temp.hProperty
+     INNER JOIN H8PROP H8P ON P.hMy = H8P.hProp
+     INNER JOIN (Select 'Property' sEntity,3 itype
+                  UNION
+                  Select 'Unit' sEntity,4 itype
+                  Union
+                  Select 'Room' sEntity,567 itype
+                  UNION
+                  Select 'Asset' sEntity,28 itype
+                  ) Entity on Entity.itype = temp.iType
+     LEFT JOIN Tenant T ON I.hContact =  T.hMyPerson
+     LEFT JOIN insp_InspectionType It ON It.hMy = I.hInspType
+     LEFT JOIN Unit U ON temp.hUnit =  U.hMy
+     LEFT JOIN Addr A ON A.hPointer =  ISNULL(temp.hUnit,temp.hProperty) AND A.iType = Case when temp.hUnit IS NOT NULL then 4 else 3 END
+     LEFT OUTER JOIN country_info propcntinf on propcntinf.hmy = p.hcountry
+     LEFT OUTER JOIN country_info Addrcntinf on Addrcntinf.hmy = A.hcountry
+     LEFT JOIN Person E ON E.hMy = I.hInspector AND E.iPersonType = 79
+     LEFT JOIN Person V ON V.hMy = I.hVendor AND V.iPersonType = 5
+     LEFT JOIN H8Unit H8U ON H8U.hUnit = U.hMy
+     LEFT JOIN Person O ON O.hMy = H8U.hVendorLtr
+     Left Join H8Summ S ON T.hMyPerson = S.hTenant AND S.bMasterRecd = -1
+     LEFT JOIN H8Param PHA ON PHA.hChart = 0
+     LEFT JOIN H8Stpr H8SP ON H8SP.hMy = S.hStpr
+     LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
+	 left join (select ci.sdatemask from country_info ci, pmuser pm where ISNULL(NULLIF(ltrim(rtrim(pm.scountry)) ,''),'us') = ltrim(rtrim(ci.scode)) and ltrim(rtrim(pm.uname)) = ltrim(rtrim( '#@@USERNAME#' ))) usersetting on 1=1
+     LEFT JOIN (
+                  Select 0 Tenant_Landlord
+                  Union
+                  Select 1
+                  ) Tenant_Landlord on 1=1
+                                 AND 1= CASE
+                                        WHEN Tenant_Landlord.Tenant_Landlord=1 AND '#LetterTo#' IN('','Landlord','Both') AND ISNULL(O.hmy,0)> 0 THEN 1
+                                        WHEN Tenant_Landlord.Tenant_Landlord=0 AND '#LetterTo#' IN('','Tenant','Both') AND ISNULL(T.hmyperson,0)> 0 THEN 1
+                                        ELSE -1
+                                     END
+     Outer apply (
+       select
+               case len(isnull(p.SADDR1,''))  when 0 then '' else     isnull(p.SADDR1,'') end
+               + case len(isnull(p.SADDR2,''))  when 0 then '' else    isnull('^'+p.SADDR2,'')end
+               +case len(isnull(p.SADDR3,''))  when 0 then '' else     isnull('^'+p.SADDR3,'') end
+               +case len(isnull(p.scity,''))  when 0 then '' else      isnull('^'+p.scity+', ','')end
+               +case len(isnull(p.sstate,''))  when 0 then '' else     isnull(p.sstate,'') end
+               +case len(isnull(p.szipcode,''))  when 0 then '' else   isnull(' '+p.szipcode,'') end
+							 +case when temp.itype = 3 OR (temp.itype =28 and temp.hunit IS not null ) then ISNULL('^'+propcntinf.sCode,'')  else ISNULL('^'+Addrcntinf.sCode,'')  end PropertyAddress
+         )Prop_addrr
+     Outer apply (
+               select
+               case len(isnull(A.SADDR1,''))  when 0 then '' else     isnull(A.SADDR1,'') end
+               + case len(isnull(A.SADDR2,''))  when 0 then '' else    isnull('^'+A.SADDR2,'')end
+               +case len(isnull(A.SADDR3,''))  when 0 then '' else     isnull('^'+A.SADDR3,'') end
+               +case len(isnull(A.scity,''))  when 0 then '' else      isnull('^'+A.scity+', ','')end
+               +case len(isnull(A.sstate,''))  when 0 then '' else     isnull(A.sstate,'') end
+               +case len(isnull(A.szipcode,''))  when 0 then '' else   isnull(' '+A.szipcode,'') end
+ 							 +case when temp.itype = 3 OR (temp.itype =28 and temp.hunit IS not null ) then ISNULL('^'+propcntinf.sCode,'')  else ISNULL('^'+Addrcntinf.sCode,'')  end
+        				unit_address
+          )unit_addrr
+   Outer apply (
+               select
+                case len(isnull(T.SADDR1,'')) when 0 then '' else  isnull(T.SADDR1,'')  end
+               +case len(isnull(T.SADDR2,'')) when 0 then '' else  isnull('^'+T.SADDR2,'') end
+               +case len(isnull(T.scity,''))  when 0 then '' else  isnull('^'+T.scity+', ','') end
+               +case len(isnull(T.sstate,'')) when 0 then '' else   isnull(T.sstate,'') end
+               +case len(isnull(T.szipcode,''))  when 0 then '' else isnull(' '+T.szipcode,'') end
+               +case when temp.itype = 3 OR (temp.itype =28 and temp.hunit IS not null ) then ISNULL('^'+propcntinf.sCode,'')  else ISNULL('^'+Addrcntinf.sCode,'')  end tenantaddress
+          ) tenant_addrr
+       Outer apply (
+               select
+               case len(isnull(O.SADDR1,''))  when 0 then '' else  isnull(O.SADDR1,'') end
+               +case len(isnull(O.SADDR2,''))  when 0 then '' else  isnull('^'+O.SADDR2,'')end
+               +case len(isnull(O.scity,''))  when 0 then '' else  isnull('^'+O.scity+', ','')end
+               +case len(isnull(O.sstate,''))  when 0 then '' else   isnull(O.sstate,'') end
+               +case len(isnull(O.szipcode,''))  when 0 then '' else isnull(' '+O.szipcode,'') end
+               +case when temp.itype = 3 OR (temp.itype =28 and temp.hunit IS not null ) then ISNULL('^'+propcntinf.SCODE,'')   else ISNULL('^'+Addrcntinf.SCODE,'')  end Owneraddress
+          )Owner_addrr
+      Outer apply  (
+               select CASE WHEN H8SP.SADDR1 IS NULL THEN NULL
+               ELSE
+               case len(isnull(H8SP.SADDR1,''))  when 0 then '' else  isnull(H8SP.SADDR1,'')end
+               + case len(isnull(H8SP.SADDR2,''))  when 0 then '' else  isnull('^'+H8SP.SADDR2,'')end
+                +case len(isnull(H8SP.scity,''))  when 0 then '' else  isnull('^'+H8SP.scity+', ','')end
+               +case len(isnull(H8SP.sstate,''))  when 0 then '' else   isnull(H8SP.sstate,'') end
+               +case len(isnull(H8SP.szipcode,''))  when 0 then '' else isnull(' '+H8SP.szipcode,'') end
+               +case when temp.itype = 3 OR (temp.itype =28 and temp.hunit IS not null ) then  ISNULL('^'+propcntinf.SCODE ,'')  else  ISNULL('^'+Addrcntinf.SCODE ,'') end
+               END
+               H8Saddress
+          ) H8S_address
+         Outer apply
+          (
+               select
+               case len(isnull(PHA.SADDR1,''))  when 0 then '' else  isnull(PHA.SADDR1,'')end
+               +case len(isnull(PHA.SADDR2,''))  when 0 then '' else  isnull('^'+PHA.SADDR2,'')end
+               +case len(isnull(PHA.scity,''))  when 0 then '' else  isnull('^'+PHA.scity+', ','')end
+               +case len(isnull(PHA.sstate,''))  when 0 then '' else   isnull(PHA.sstate,'') end
+               +case len(isnull(PHA.szipcode,''))  when 0 then '' else isnull(' '+PHA.szipcode,'') end
+              +case when temp.itype = 3 OR (temp.itype =28 and temp.hunit IS not null ) then ISNULL( '^'+propcntinf.SCODE,'')   else  ISNULL('^'+Addrcntinf.SCODE,'')  end PHAAddress
+          )PHA_address
+WHERE 1 = CASE
+          WHEN '#RptType#' ='Schedule' AND I.dtScheduled IS NULL THEN 0
+          WHEN '#RptType#' IN ('Pass','Fail','Inconclusive') AND LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 THEN 0
+          WHEN '#RptType#' IN ('Pass - Notes','Fail - Notes','Inconclusive - Notes')
+                AND (LEN(LTRIM(RTRIM(ISNULL(I.sResultNotes,'')))) <1 OR LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 )
+          THEN 0
+          ELSE 1 END
+      AND ( ISNULL(O.hmy,0)> 0 or  ISNULL(T.hmyperson,0)> 0 or ISNULL(V.hMy,0)> 0 )
+      AND Tenant_Landlord.Tenant_Landlord >=0
+#Conditions#
+//END SELECT
+
+//Command After
+If ('#Updt#' = 'Yes')
+UPDATE Inspection2 SET dtNotified = GetDate()/*convert(datetime, CONVERT (varchar(10), GETDATE(),112)) */
+WHERE hMy IN (SELECT I.hMy
+              FROM Inspection2 I
+              INNER JOIN #TEMP temp on temp.hInspection=i.hmy
+              INNER JOIN Property P ON P.hMy = temp.hProperty
+              LEFT JOIN insp_InspectionType It ON It.hMy = I.hInspType
+              LEFT JOIN Addr A ON A.hPointer =  ISNULL(temp.hUnit,temp.hProperty) AND A.iType = Case when temp.hUnit IS NULL then 3 else 4 END
+              LEFT JOIN Tenant T ON I.hContact = T.hMyPerson
+              LEFT JOIN Person E ON E.hMy = I.hInspector AND E.iPersonType = 79
+              LEFT JOIN Person V ON V.hMy = I.hVendor AND V.iPersonType = 5
+              LEFT JOIN H8Unit H8U ON H8U.hUnit = temp.hUnit
+              LEFT JOIN Person O ON O.hMy = H8U.hVendorLtr
+              LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
+              WHERE 1 = CASE
+                        WHEN '#RptType#' ='Schedule' AND I.dtScheduled IS NULL THEN 0
+                        WHEN '#RptType#' IN ('Pass','Fail','Inconclusive') AND LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 THEN 0
+                        WHEN '#RptType#' IN ('Pass - Notes','Fail - Notes','Inconclusive - Notes')
+                              AND (LEN(LTRIM(RTRIM(ISNULL(I.sResultNotes,'')))) <1 OR LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 )
+                        THEN 0
+                        ELSE 1
+                        END
+              #Conditions#
+             )
+  AND '#Updt#' = 'Yes'
+//END Command
+
+//Command After
+if ('#LetterTo#' = 'Tenant' or '#LetterTo#' = 'Both' or IsNull('#LetterTo#', '') = '') AND
+   ('#RptType#' ='Schedule' AND '#Cmdt#' = 'Yes')
+  INSERT INTO Memo (uDate, hFilerCd, iFileType, iField, hProp, hUnit, sText, hEmp, bCalendar, sActivity, sStatus)
+         (SELECT GetDate(), I1.hMy, 246, 0, P.hMy, temp.hUnit,
+          'Inspection Schedule Letter sent to ' +
+          T.sFirstName + ' ' + T.sLastName
+          +
+          ' ON:  ' + rtrim(CONVERT(CHAR,GetDate(),101)) + '.' + CHAR(13) +
+          'Letter sent By:  ' + CASE IsNull('#@@USERNAME#', '') WHEN '' THEN 'Admin' ELSE '#@@USERNAME#' END + '.',
+          (SELECT hMyPerson FROM PrEmployee WHERE hUser = (SELECT hMy FROM PmUser WHERE uName = '#@@USERNAME#')),
+          -1,
+          'Schedule Letter-Resident',
+          'Completed'
+          FROM Inspection2 I1
+          INNER JOIN #TEMP temp on temp.hInspection=I1.hmy
+          INNER JOIN Property P ON P.hMy = temp.hProperty
+          INNER  JOIN Tenant T ON T.hMyPerson = I1.hContact
+          WHERE I1.dtScheduled IS NOT NULL
+          AND  I1.hMy IN (SELECT I.hMy
+                           FROM Inspection2 I
+                           INNER JOIN #TEMP temp on temp.hInspection=I1.hmy
+                           INNER JOIN Property P ON P.hMy = temp.hProperty
+                           INNER JOIN Tenant T ON I.hContact = T.hMyPerson
+                           LEFT JOIN insp_InspectionType It ON It.hMy = I.hInspType
+                           LEFT JOIN Addr A ON A.hPointer =  ISNULL(temp.hUnit,temp.hProperty) AND A.iType = Case when temp.hUnit IS NULL then 3 else 4 END
+                           LEFT JOIN Person E ON E.hMy = I.hInspector AND E.iPersonType = 79
+                           LEFT JOIN Person V ON V.hMy = I.hVendor AND V.iPersonType = 5
+                           LEFT JOIN H8Unit H8U ON H8U.hUnit = temp.hUnit
+                           LEFT JOIN Person O ON O.hMy = H8U.hVendorLtr
+                           LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
+                           WHERE I.dtScheduled IS NOT NULL
+                           #Conditions#
+                          )
+            AND IsNull((SELECT Count(Memo.hMy) FROM Memo
+                        WHERE Memo.hFilerCd = I1.hMy
+                          AND '#LetterTo#' IN('','Tenant','Both') AND rtrim(Memo.sActivity) = 'Schedule Letter-Resident'
+                          AND Memo.sStatus = 'Completed'),0) = 0)
+//END Command
+
+//Command After
+if ('#LetterTo#' = 'Landlord' or '#LetterTo#' = 'Both' or IsNull('#LetterTo#', '') = '') AND
+	 ('#RptType#' ='Schedule' AND '#Updt#' = 'Yes')
+  INSERT INTO Memo (uDate, hFilerCd, iFileType, iField, hProp, hUnit, sText, hEmp, bCalendar, sActivity, sStatus)
+         (SELECT GetDate(), I1.hMy, 246, 0, P.hMy, temp.hUnit,
+          'Inspection Schedule Letter sent to ' +  ISNULL(P1.sFirstName,'') + ' ' + ISNULL(P1.uLastName,'') +
+          ' ON:  ' + rtrim(CONVERT(CHAR,GetDate(),101)) + '.' + CHAR(13) +
+          'Letter sent By:  ' + CASE IsNull('#@@USERNAME#', '') WHEN '' THEN 'Admin' ELSE '#@@USERNAME#' END + '.',
+          (SELECT hMyPerson FROM PrEmployee WHERE hUser = (SELECT hMy FROM PmUser WHERE uName = '#@@USERNAME#')),
+          -1,
+          'Schedule Letter-Landlord',
+          'Completed'
+          FROM Inspection2 I1
+          INNER JOIN #TEMP temp on temp.hInspection=I1.hmy
+          INNER JOIN Property P ON P.hMy = temp.hProperty
+          INNER JOIN H8Unit HU ON HU.hUnit = temp.hUnit
+          INNER JOIN Person P1 ON P1.hMy = HU.hVendorLtr
+          WHERE I1.dtScheduled IS NOT NULL
+          AND  I1.hMy IN (SELECT I.hMy
+                           FROM Inspection2 I
+                           INNER JOIN #TEMP temp on temp.hInspection=I1.hmy
+                           INNER JOIN Property P ON P.hMy = temp.hProperty
+                           INNER JOIN H8Unit H8U ON H8U.hUnit = temp.hUnit
+                           INNER JOIN Person O ON O.hMy = H8U.hVendorLtr
+                           LEFT JOIN insp_InspectionType It ON It.hMy = I.hInspType
+                           LEFT JOIN Addr A ON A.hPointer =  ISNULL(temp.hUnit,temp.hProperty) AND A.iType = Case when temp.hUnit IS NULL then 3 else 4 END
+                           LEFT JOIN Person E ON E.hMy = I.hInspector AND E.iPersonType = 79
+                           LEFT JOIN Person V ON V.hMy = I.hVendor AND V.iPersonType = 5
+                           LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
+                           LEFT JOIN Tenant T ON I.hContact = T.hMyPerson
+                           WHERE 1=1
+                           #Conditions#
+                          )
+            AND IsNull((SELECT Count(Memo.hMy) FROM Memo
+                        WHERE Memo.hFilerCd = I1.hMy
+                          AND '#LetterTo#' IN('','Landlord','Both') AND rtrim(Memo.sActivity) = 'Schedule Letter-Landlord'
+                          AND Memo.sStatus = 'Completed'),0) = 0)
+//END Command
+
+//Command After
+IF      ('#LetterTo#' IN('Tenant','Both','')
+    AND '#RptType#' IN ('Pass','Fail','Inconclusive','Pass - Notes','Fail - Notes','Inconclusive - Notes')
+    AND '#Cmdt#' = 'Yes')
+  INSERT INTO Memo (uDate, hFilerCD, iFileType, iField, hProp, hUnit, sText, hEmp, bCalendar, sActivity, sStatus)
+         (SELECT GetDate(), I1.hMy, 246, 0, P.hMy, temp.hUnit,
+           CASE
+                 WHEN LEN(LTRIM(RTRIM(ISNULL(I1.sScheduleNotes,'')))+ LTRIM(RTRIM(ISNULL(I1.sResultNotes,'')))) > 1
+                 THEN 'Inspection Results Ltr w/ Notes Letter sent to '
+                 ELSE 'Inspection Results Letter sent to '
+                 END  + ISNULL(T.sFirstName,'') + ' ' + ISNULL(T.sLastName,'') +
+                 ' ON:  ' + rtrim(CONVERT(CHAR,GetDate(),101)) + '.' + CHAR(13) +
+                 'Letter sent By:  ' + CASE isnull('#@@USERNAME#', '') WHEN '' THEN 'Admin' ELSE '#@@USERNAME#' END + '.',
+                 (SELECT hMyPerson FROM PrEmployee WHERE hUser = (SELECT hMy FROM PmUser WHERE uName = '#@@USERNAME#')),
+                 -1,
+                 Case
+                 WHEN LEN(LTRIM(RTRIM(ISNULL(I1.sScheduleNotes,'')))+ LTRIM(RTRIM(ISNULL(I1.sResultNotes,''))))>1
+                 THEN 'Results Ltr w/ Notes-Resident'
+                 ELSE 'Results Letter-Resident'
+                 END,
+                 'Completed'
+          FROM Inspection2 I1
+               INNER JOIN #TEMP temp on temp.hInspection=I1.hmy
+               INNER JOIN Property P ON P.hMy = temp.hProperty
+               INNER JOIN Tenant T ON T.hMyPerson = I1.hContact
+          WHERE I1.hMy IN (SELECT I.hMy
+                           FROM Inspection2 I
+                           INNER JOIN #TEMP temp on temp.hInspection=I.hmy
+                           INNER JOIN Property P ON P.hMy = temp.hProperty
+                           INNER JOIN Tenant T ON I.hContact = T.hMyPerson
+                           LEFT JOIN insp_InspectionType It ON It.hMy = I.hInspType
+                           LEFT JOIN Addr A ON A.hPointer =  ISNULL(temp.hUnit,temp.hProperty) AND A.iType = Case when temp.hUnit IS NULL then 3 else 4 END
+                           LEFT JOIN Person E ON E.hMy = I.hInspector AND E.iPersonType = 79
+                           LEFT JOIN Person V ON V.hMy = I.hVendor AND V.iPersonType = 5
+                           LEFT JOIN H8Unit H8U ON H8U.hUnit = temp.hUnit
+                           LEFT JOIN Person O ON O.hMy = H8U.hVendorLtr
+                           LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
+                           WHERE 1 = CASE
+                                       WHEN '#RptType#' ='Schedule' AND I.dtScheduled IS NULL THEN 0
+                                       WHEN '#RptType#' IN ('Pass','Fail','Inconclusive') AND LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 THEN 0
+                                       WHEN '#RptType#' IN ('Pass - Notes','Fail - Notes','Inconclusive - Notes')
+                                            AND (LEN(LTRIM(RTRIM(ISNULL(I.sResultNotes,'')))) <1 OR LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 )
+                                       THEN 0
+                                       ELSE 1
+                                     END
+                            #Conditions#
+                          )
+            AND isnull((SELECT count(Memo.hMy) FROM Memo
+                        WHERE Memo.hFilercd = I1.hMy
+                          AND rtrim(Memo.sActivity) = CASE
+                           WHEN '#RptType#' IN ('Pass - Notes','Fail - Notes','Inconclusive - Notes')
+                           THEN 'Results Ltr w/ Notes-Resident'
+                           ELSE 'Results Letter-Resident'
+                        END
+                          AND Memo.sStatus = 'Completed'),0) = 0
+         )
+//END Command
+
+
+//Command After
+IF      ('#LetterTo#' IN('Landlord','Both','')
+    AND '#RptType#' IN ('Pass','Fail','Inconclusive','Pass - Notes','Fail - Notes','Inconclusive - Notes')
+    AND '#Cmdt#' = 'Yes')
+  INSERT INTO Memo (uDate, hFilerCD, iFileType, iField, hProp, hUnit, sText, hEmp, bCalendar, sActivity, sStatus)
+         (SELECT GetDate(), I1.hMy, 246, 0, P.hMy, temp.hUnit,
+           CASE
+                 WHEN LEN(LTRIM(RTRIM(ISNULL(I1.sResultNotes,'')))) > 1
+                 THEN 'Inspection Results Ltr w/ Notes Letter sent to '
+                 ELSE 'Inspection Results Letter sent to '
+                 END  + ISNULL(P1.sFirstName,'') + ' ' + ISNULL(P1.uLastName,'') +
+                 ' ON:  ' + rtrim(CONVERT(CHAR,GetDate(),101)) + '.' + CHAR(13) +
+                 'Letter sent By:  ' + CASE isnull('#@@USERNAME#', '') WHEN '' THEN 'Admin' ELSE '#@@USERNAME#' END + '.',
+                 (SELECT hMyPerson FROM PrEmployee WHERE hUser = (SELECT hMy FROM PmUser WHERE uName = '#@@USERNAME#')),
+                 -1,
+                 Case
+                 WHEN LEN(LTRIM(RTRIM(ISNULL(I1.sResultNotes,''))))>1
+                 THEN 'Results Ltr w/ Notes-Landlord'
+                 ELSE 'Results Letter-Landlord'
+                 END,
+                 'Completed'
+          FROM Inspection2 I1
+               INNER JOIN #TEMP temp on temp.hInspection=I1.hmy
+               INNER JOIN Property P ON P.hMy = temp.hProperty
+               INNER JOIN H8Unit H8U ON H8U.hUnit = temp.hUnit
+               INNER JOIN Person P1 ON P1.hMy = H8U.hVendorLtr
+          WHERE I1.hMy IN (SELECT I.hMy
+                           FROM Inspection2 I
+                           INNER JOIN #TEMP temp on temp.hInspection=I.hmy
+                           INNER JOIN Property P ON P.hMy = temp.hProperty
+                           INNER JOIN H8Unit H8U ON H8U.hUnit = temp.hUnit
+                           INNER JOIN Person O ON O.hMy = H8U.hVendorLtr
+                           LEFT JOIN Tenant T ON I.hContact =  T.hMyPerson
+                           LEFT JOIN insp_InspectionType It ON It.hMy = I.hInspType
+                           LEFT JOIN Addr A ON A.hPointer =  ISNULL(temp.hUnit,temp.hProperty) AND A.iType = Case when temp.hUnit IS NULL then 3 else 4 END
+                           LEFT JOIN Person E ON E.hMy = I.hInspector AND E.iPersonType = 79
+                           LEFT JOIN Person V ON V.hMy = I.hVendor AND V.iPersonType = 5
+                           LEFT JOIN H8CensusTract H8CT ON H8U.hCensusTract = H8CT.hMy
+                           WHERE 1 = CASE
+ 			               WHEN '#RptType#' ='Schedule' AND I.dtScheduled IS NULL THEN 0
+                                       WHEN '#RptType#' IN ('Pass','Fail','Inconclusive') AND LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 THEN 0
+                                       WHEN '#RptType#' IN ('Pass - Notes','Fail - Notes','Inconclusive - Notes')
+                                            AND (LEN(LTRIM(RTRIM(ISNULL(I.sResultNotes,'')))) <1 OR LEN(LTRIM(RTRIM(ISNULL(I.sStatus,'')))) < 1 )
+                                       THEN 0
+                                       ELSE 1
+                                     END
+                            #Conditions#
+                          )
+            AND isnull((SELECT count(Memo.hMy) FROM Memo
+                        WHERE Memo.hFilercd = I1.hMy
+                          AND rtrim(Memo.sActivity) = CASE
+                           WHEN '#RptType#' IN ('Pass - Notes','Fail - Notes','Inconclusive - Notes')
+                           THEN 'Results Ltr w/ Notes-Landlord'
+                           ELSE 'Results Letter-Landlord'
+                        END
+                          AND Memo.sStatus = 'Completed'),0) = 0
+         )
+//END Command
+
+//Format
+Contactdetail Multiline
+HeaderAddress Multiline
+MailAddress Multiline
+InspectionAddress Multiline
+InspId &&&&&&&&
+Propertyaddress Multiline
+LetterDate MMMM DD, YYYY
+dtScheduledDate MM/DD/YYYY
+dtActionDue MM/DD/YYYY
+dtScheduledTime	HH:MMAM/PM
+//End Format
+
+//Filter
+//Type, DataTyp, Name,          Caption,                             Key, List,                                                                            Val1,                                                                    Val2, Mandatory, Multi-Type, Title
+  M,    T,       Entity,        Entity Type,                         ,    ^Property^Unit^Room^Asset,                               Entity.sEntity ='#Entity#',                                                                          ,     ,         N,           N,
+  C,    T,       P.hMy,         Property,                            ,    524,                                                                             ,                                                                            ,     ,         Y,           Y,
+  C,    T,       u.hmy,         Unit,                                ,    4,                                                                               ,                                                                            ,     ,         Y,           ,
+  C,    T,       r.hMy,         Room,                                ,    567,                                                                             ,                                                                            ,     ,         Y,           Y,
+  C,    T,       ma.hMy,        Asset,                               ,    28,                                                                              ,                                                                            ,     ,         Y,           Y,
+  C,    T,       t.hMyPerson,   Tenant,                              ,    1,                                                                               t.hMyPerson = #t.hMyPerson#,                                                 ,     ,          ,           Y,
+  C,    T,       o.hMy,         Landlord,                            ,    5,                                                                               o.hMy = #o.hMy#,                                                             ,     ,          ,           Y,
+  0,    I,       InspId,        Inspection ID,                       ,    ,                                                                                I.hMy = #InspID#,                                                            ,     N,         ,           ,
+  L,    T,       InspType,      Inspection Type,                     ,    "SELECT stype FROM insp_InspectionType WHERE ISNULL(bhistorical,0) = 0", It.sType = '#InspType#',                                                             ,     ,          ,           ,
+  C,    T,       ehMy,          Employee Inspector,                  ,    247,                                                                             e.hMy = #ehMy#,                                                              ,     ,          ,           Y,
+  C,    T,       v.hMy,         Vendor Inspector,                    ,    5,                                                                               v.hMy = #v.hMy#,                                                             ,     ,          ,           Y,
+  0,    T,       Zip,           Zip Code,                            ,    "SELECT sZipCode,sZipCode FROM (SELECT sZipCode FROM Addr a WHERE a.iType IN (3,4) AND IsNull(sZipCode,'')<>'' UNION SELECT h8ctdet.sZip FROM H8Prop h8p,H8CensusTract H8CT,H8CensusTractDet h8ctdet WHERE H8CT.hMy=h8ctdet.hCensusTract AND h8p.hCensusTract=H8CT.hMy UNION SELECT h8ctdet.sZip FROM H8Unit H8U,H8CensusTract H8CT,H8CensusTractDet h8ctdet WHERE H8CT.hMy=h8ctdet.hCensusTract AND H8U.hCensusTract=H8CT.hMy) T1 WHERE 1=1",  A.sZipCode IN ('#Zip#'),  ,  ,  Y,  Y,  ,
+  C,    T,       Census,        Census Tract,                        ,    327,                                                                             H8CT.hMy IN (#Census#),                                                      ,     ,          Y,          Y,
+  R,    A,       dtFromR:dtToR, Requested Between,                   ,    ,                                                                                I.dtRequest >= '#dtFromR#' and I.dtRequest < '#dtToR#' +1,                   ,     N,         ,           ,
+  R,    A,       dtFromD:dtToD, Due Between,                         ,    ,                                                                                I.dtDue >= '#dtFromD#' and I.dtDue <'#dtToD#' +1,                            ,     N,         ,           ,
+  R,    A,       dtFromS:dtToS, Scheduled Between,                   ,    ,                                                                                I.dtScheduled >= '#dtFromS#' and I.dtScheduled < '#dtToS#' +1,               ,     ,          ,           ,
+  L,    T,                 stT, 	   Start Time,										 ,   	^08:00 AM^08:15 AM^08:30 AM^08:45 AM^09:00 AM^09:15 AM^09:30 AM^09:45 AM^10:00 AM^10:15 AM^10:30 AM^10:45 AM^11:00 AM^11:15 AM^11:30 AM^11:45 AM^12:00 PM^12:15 PM^12:30 PM^12:45 PM^01:00 PM^01:15 PM^01:30 PM^01:45 PM^02:00 PM^02:15 PM^02:30 PM^02:45 PM^03:00 PM^03:15 PM^03:30 PM^03:45 PM^04:00 PM^04:15 PM  ^04:30 PM^04:45 PM^05:00 PM^05:15 PM^05:30 PM^05:45 PM^06:00 PM^06:15 PM^06:30 PM^06:45 PM^07:00 PM^07:15 PM^07:30 PM^07:45 PM^08:00 PM^08:15 PM^08:30 PM^08:45 PM^09:00 PM^09:15 PM^09:30 PM^09:45 PM^10:00 PM^10:15 PM^10:30 PM^10:45 PM^11:00 PM^11:15 PM^11:30 PM^11:45 PM^00:00 AM^00:15 AM^00:30 AM^00:45 AM,	"CONVERT(Time,I.dtScheduled,108)  >= convert(Time,convert(datetime,'#stT#',108),108)" ,  			,          ,       		,     	Y,
+  L,    T,                endT, 	     End Time,										 ,   	^08:00 AM^08:15 AM^08:30 AM^08:45 AM^09:00 AM^09:15 AM^09:30 AM^09:45 AM^10:00 AM^10:15 AM^10:30 AM^10:45 AM^11:00 AM^11:15 AM^11:30 AM^11:45 AM^12:00 PM^12:15 PM^12:30 PM^12:45 PM^01:00 PM^01:15 PM^01:30 PM^01:45 PM^02:00 PM^02:15 PM^02:30 PM^02:45 PM^03:00 PM^03:15 PM^03:30 PM^03:45 PM^04:00 PM^04:15 PM  ^04:30 PM^04:45 PM^05:00 PM^05:15 PM^05:30 PM^05:45 PM^06:00 PM^06:15 PM^06:30 PM^06:45 PM^07:00 PM^07:15 PM^07:30 PM^07:45 PM^08:00 PM^08:15 PM^08:30 PM^08:45 PM^09:00 PM^09:15 PM^09:30 PM^09:45 PM^10:00 PM^10:15 PM^10:30 PM^10:45 PM^11:00 PM^11:15 PM^11:30 PM^11:45 PM^00:00 AM^00:15 AM^00:30 AM^00:45 AM,	"CONVERT(Time,I.dtScheduled,108)  <= convert(Time,convert(datetime,'#endT#',108),108)" ,  			,          ,       		,     	Y,
+  R,    A,       dtFromi:dtToi, Inspected Between,                      ,    ,                                                                                I.dtinspected >= '#dtFromi#' and I.dtinspected <'#dtToi#' +1,                ,     N,         ,           ,
+  L,    T,       StatusType,    Primary Status,                      ,    "select stext from insp_Lookup where ilistType = 0 and isnull(bhistorical,0) = 0" ,I.sStatus = '#StatusType#',                                                ,     ,          ,           ,
+  L,    T,       LetterTo,      Letter To,                           ,    ^Tenant^Landlord^Both^,                                                          ,                                                                            ,     N,         ,           ,
+  L,    T,       RptType,       Type of Letter,                      ,    Schedule^Pass^Pass - Notes^Fail^Fail - Notes^Inconclusive^Inconclusive - Notes^, ,                                                                            ,     Y,         ,           ,
+  L,    T,       Updt,          Update Notified Date?,               ,    ^Yes^No,                                                                         ,                                                                            ,     ,          ,           ,
+  L,    T,       Cmdt,          Create Memo?,                        ,    ^Yes^No,                                                                         ,                                                                            ,     ,          ,           ,
+  L,    T,       SortOrd1,      Sort Order 1,                        ,    ^Due Date^Zip Code^Census Tract^Unit Address,                                    ,                                                                            ,     ,          ,           ,
+  L,    T,       SortOrd2,      Sort Order 2,                        ,    ^Due Date^Zip Code^Census Tract^Unit Address,                                    ,                                                                            ,     ,          ,           ,
+  L,    T,       SortOrd3,      Sort Order 3,                        ,    ^Due Date^Zip Code^Census Tract^Unit Address,                                    ,                                                                            ,     ,          ,           ,
+//END Filter
