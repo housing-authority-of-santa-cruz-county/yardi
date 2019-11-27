@@ -1,0 +1,112 @@
+//vista
+
+//Database
+//End Database
+
+//Notes
+	NAME
+		rs_PHA_58TransmitList.txt
+	DESCRIPTION
+		List all 50058s which are transmitted to HUD.
+	NOTES
+
+	MODIFIED
+		TR#100188 - 06/29/2007 - Created by Ray Elliott
+    06/18/10 - TR#110719, 187916, 132097 - JohnB - Added filter for MTCS Filename.
+    08/29/2013 - TR#278531 - JichengH - Changed ordering of Dates
+//End Notes
+
+//Title
+Transmitted 50058 Listing
+SELECT CASE '#sMTCSFileName#' WHEN '' THEN '' ELSE 'MTCS Filename = #sMTCSFileName#' END
+//end title
+
+//Select
+Select
+p.Scode, t.sCode,t.sfirstname, t.slastname,
+Case t.iStatus
+	When 0 Then 'Current'
+	When 1 Then 'Past'
+	When 2 Then 'Future'
+	When 3 Then 'Eviction'
+	When 4 Then 'Notice'
+	Else 'Vacant'
+End,
+Case s.sActionType2a
+	When '1' Then 'New'
+	When '2' Then 'Annual'
+	When '3' Then 'Interim'
+	When '4' Then 'PortMI'
+	When '5' Then 'PortMO'
+	When '6' Then 'End'
+	When '7' Then 'Unit Change'
+	When '8' Then 'FSS'
+	When '9' Then 'Annual-Search'
+	When 'A' Then 'Vou Issue'
+	When 'B' Then 'Vou Exp'
+	When 'C' Then 'Flat Rent Annual'
+	When 'D' Then 'HQS Only'
+	When 'E' Then 'Hist Adj'
+	When 'F' Then 'Void'
+	Else 'None'
+End,
+convert(char(12),s.dteffective2b,101), convert(char(12),s.dtmtcssent,101),
+s.hMy, '1'
+from property p, unit u left outer join tenant t on u.hMy = t.hUnit,
+     h8summ s
+where p.hMy   = u.hProperty
+  and s.htenant = t.hmyperson
+  and s.sactiontype2a =
+	Case '#s.sactiontype2a#'
+		When 'New'		Then '1'
+		When 'Annual'		Then '2'
+		When 'Interim'		Then '3'
+		When 'PortMI'		Then '4'
+		When 'PortMO'		Then '5'
+		When 'End'		Then '6'
+		When 'UnitChange'	Then '7'
+		When 'FSS'		Then '8'
+		When 'Annual-Search' 	Then '9'
+		When 'Vou Issue' 	Then 'A'
+		When 'Vou Exp' 		Then 'B'
+		When 'Flat Rent Annual'	Then 'C'
+		When 'HQS Only'		Then 'D'
+		When 'Hist Adj'		Then 'E'
+		When 'Void'		Then 'F'
+		Else		s.sactiontype2a
+		End
+and not s.dtmtcsok is null
+and s.dtmtcssent > '12/31/1899'
+and (s.bmasterrecd is null or s.bmasterrecd <> -1)
+#conditions#
+
+order by 1,4,3,
+s.DTEFFECTIVE2B DESC,
+s.dtmtcssent DESC,
+2
+//end select
+
+
+//Columns
+//Type, Name, Head1, Head2,  Head3,          Head4, Show, Color, Formula, Drill, Key, Width
+     T,     ,      ,      ,       ,       Property,    Y,      ,        ,      ,    ,   750,
+     T,     ,      ,      ,       ,           Code,    y,      ,        ,     1,    ,   750,
+     T,     ,      ,      ,       ,     First Name,    y,      ,        ,      ,    ,  1200,
+     T,     ,      ,      ,       ,      Last Name,    y,      ,        ,      ,    ,  1500,
+     T,     ,      ,      ,       ,         Status,    Y,      ,        ,      ,    ,   750,
+     T,     ,      ,      ,       ,    Action Type,    Y,      ,        ,      ,    ,  1050,
+     T,     ,      ,      ,       , Effective Date,    Y,      ,        ,      ,    ,  1500,
+     T,     ,      ,      ,       ,  Transmit Date,    Y,      ,        ,      ,    ,  1500,
+     T,     ,      ,      ,       ,      58 Ctrl #,    Y,      ,        ,      ,    ,  1500,
+     I,     ,      ,      ,       ,       Counter ,    y,      ,        ,      ,    ,   800,
+//End columns
+
+//Filter
+//Type, DataTyp,                  Name,                 Caption, Key,                                                                                                                                 List,                                                                                          Val1, Val2, Mandatory,Multi-Type, Title,
+     C,       T,                 p.hMy,                Property,    ,                                                                                                                                   61,                                                                               p.hMy = #p.hMy#,     ,          ,          ,     Y,
+     C,       T,           t.hMyPerson,                  Tenant,    ,                                                                                                                                    1,                                                                   t.hMyPerson = #t.hMyPerson#,     ,          ,          ,     Y,
+     L,       I,       s.sactiontype2a,             Action Type,    ,        ^New^Annual^Interim^PortMI^PortMO^End^UnitChange^FSS^Annual-Search^Vou Issue^Vou Exp^Flat Rent Annual^HQS Only^Hist Adj^Void^,                                                                                              ,     ,          ,         Y,     Y,
+     R,       A,           dtFrom:dtTo,   Action Eff Date Range,    ,                                                                                                                                     , " CONVERT(datetime, CONVERT(varchar, s.dtEffective2b, 101)) between '#dtFrom#' and '#dtTo#' ",     ,          ,          ,     Y,
+     R,       A, dtTransFrom:dtTransTo,     Transmit Date Range,    ,                                                                                                                                     ,                                        s.dtmtcssent between '#dtTransFrom#' and '#dtTransTo#',     ,          ,          ,     Y,
+     L,       T,         sMTCSFileName,           MTCS Filename,    ,                                                                                             select sMTCSFileName FROM H8MTCSFileSent,    s.hMTCSFileSent = (select hMy from H8MTCSFileSent WHERE sMTCSFileName = '#sMTCSFileName#'),     ,          ,          ,      ,
+//end filter
