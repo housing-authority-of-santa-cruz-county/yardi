@@ -1,0 +1,77 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_AAL_Need_Docs.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/18/2019 - Created by jonathan
+    10/24/2019 - Last Modified by jonathan
+//End Notes
+
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+AAL Need Docs
+//End Title
+
+//Select Primary
+ SELECT  'Y_AAL_Need_Docs.docx' _FILE_NL1_
+ , CASE WHEN WLTen.sfields0 = 'Spanish' OR wla.sfield0 = 'Spanish' THEN 'Y_AAL_Need_Docs_Spanish.docx' ELSE '' END _FILE_NL2_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , GETDATE() 'LetterDate'
+              , GETDATE() 'LetterDateSpan'
+              , DATEADD(day, 21, GETDATE()) 'ApptDate'
+              , DATEADD(day, 21, GETDATE()) 'ApptDateSpan'
+              , wlwaitlist.sDesc 'wlcode'
+              , WLTen.sFirstName + ' ' + WLTen.sLastName 'ToName'
+              , WLTen.scode 'tcode'
+              , wla.dtapplied 'dtapplied'
+              , wla.dtapplied 'dtappliedspan'
+              , case when isnull(WLTen.saddr1, '') <> '' then ltrim(rtrim(WLTen.saddr1)) + '^' else '' end + case when isnull(WLTen.saddr2, '') <> '' then ltrim(rtrim(WLTen.saddr2)) + '^' else '' end + case when isnull(WLTen.sCity, '') <> '' then ltrim(rtrim(WLTen.sCity)) else '' end + case when isnull(WLTen.sState, '') = '' and isnull(WLTen.sZipCode, '') = '' then ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) else ', ' + ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) end 'MailAddress'
+ FROM  Property p  INNER JOIN Tenant wlTenant ON (wlTenant.hProperty = p.hMy)
+ INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
+ INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+ cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+//End Select Primary
+
+//Format
+ApptDate MMMM DD, YYYY
+LetterDate MMMM DD, YYYY
+dtapplied MMMM DD, YYYY
+ApptDateSpan DD MMMM YYYY
+LetterDateSpan DD MMMM YYYY
+dtappliedspan DD MMMM YYYY
+MailAddress MultiLine
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"Field10"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
+0    ,T    ,"Field111"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field111#') ",     ,N    ,   ,Y
+//End Filter

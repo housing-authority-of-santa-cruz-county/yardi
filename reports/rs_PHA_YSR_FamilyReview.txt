@@ -1,0 +1,240 @@
+//Select
+SELECT CONVERT(VARCHAR,s.hmy) _Key_, CONVERT(VARCHAR,T.hmyperson) "TenantKey", T.sFirstName + ' ' + T.sLastName "Tenant Name",
+T.sCode "Tenant Code"
+
+FROM H8Summ S
+INNER JOIN TENANT T ON S.hTenant =  T.hMyPerson
+INNER JOIN UNIT U ON T.hUnit =  U.hMY
+INNER JOIN PROPERTY PR ON PR.hMy = U.hPROPERTY
+INNER JOIN tenStatus ts on t.istatus = ts.istatus
+LEFT JOIN H8UNIT HU ON HU.HUNIT=U.HMY
+LEFT JOIN (SELECT UT.hmy hMy,CASE WHEN ISNULL(sdesc,'') = '' THEN scode ELSE sdesc END sDesc FROM UNITTYPE UT) UTDESC ON UTDESC.hMy = U.hUNITTYPE
+LEFT JOIN ADDR A ON A.hPointer =  U.hMY and A.iType = 4
+LEFT JOIN Person E On E.hMy = S.hCaseworker And E.iPersonType = 79
+LEFT JOIN H8Public P ON S.hMy =  P.hSum
+LEFT JOIN H8Certif C ON S.hMy =  C.hSum
+LEFT JOIN H8Vouch V ON S.hMy = V.hSum
+LEFT JOIN H8ModReh M ON S.hMy =  M.hSum
+LEFT JOIN H8HomeOwnership H ON S.hMy =  H.hSum
+LEFT JOIN PERSON O ON O.hMy = case S.sProgram1d
+                         WHEN 'CE' THEN C.hVendor
+                         WHEN 'VO' THEN V.hVendor
+                         WHEN 'MR' THEN M.hVendor
+						 WHEN 'PV' THEN C.hVendor
+						 WHEN 'H' THEN H.hVendor
+						 ELSE S.hVendor
+						 END
+WHERE S.BMASTERRECD = -1
+      #conditions#
+ORDER BY T.hMyPerson
+//End Select
+
+//Select Prim
+SELECT T.sFirstName + ' ' + T.sLastName TenantName,CONVERT(VARCHAR,T.hmyperson) "TenantKey",
+CONVERT(varchar,GETDATE(),107) letterdate,
+FORMAT(S.dAdjMonthlyInc9d*0.3, 'C') inc30,
+FORMAT(S.dAdjMonthlyInc9d*0.4, 'C') inc40,
+T.sCode tenantcode,
+CASE S.sProgram1d when 'PV' then 'Project Based Voucher' when 'H' then 'Homeownership' when 'CE' then 'Certificate' when 'VO' then 'Section 8 Voucher' when 'P' then 'Public Housing' when 'MR' then 'MR-Moderate Rehabilitation' else 'Not Set' end programname,
+CASE WHEN SUBSTRING(T.SPHONENUM1,4,1)='-' OR SUBSTRING(T.SPHONENUM1,1,1)='(' THEN T.SPHONENUM1
+       WHEN LEN(RTRIM(T.SPHONENUM1))> 7 AND LEN(RTRIM(T.SPHONENUM1))< 11 THEN '(' + SUBSTRING(T.SPHONENUM1,1,3) + ') ' + SUBSTRING(T.SPHONENUM1,4,3) + '-' + SUBSTRING(T.SPHONENUM1,7,7)
+  		 WHEN LEN(RTRIM(T.SPHONENUM1))> 10 THEN '(' + SUBSTRING(T.SPHONENUM1,1,3) + ') ' + SUBSTRING(T.SPHONENUM1,4,3) + '-' + SUBSTRING(T.SPHONENUM1,7,4)+ ' x '  + SUBSTRING (T.SPHONENUM1, 11,5)
+  		 WHEN LEN(T.SPHONENUM1)> 3 THEN SUBSTRING(T.SPHONENUM1,1,3) + '-' + SUBSTRING(T.SPHONENUM1,4,5)
+  		Else T.SPHONENUM1 END tenofficephone,
+CASE WHEN SUBSTRING(T.sPhoneNum0,4,1)='-' OR SUBSTRING(T.sPhoneNum0,1,1)='(' THEN T.sPhoneNum0
+       WHEN LEN(RTRIM(T.sPhoneNum0))> 7 AND LEN(RTRIM(T.sPhoneNum0))< 11 THEN '(' + SUBSTRING(T.sPhoneNum0,1,3) + ') ' + SUBSTRING(T.sPhoneNum0,4,3) + '-' + SUBSTRING(T.sPhoneNum0,7,7)
+  		 WHEN LEN(RTRIM(T.sPhoneNum0))> 10 THEN '(' + SUBSTRING(T.sPhoneNum0,1,3) + ') ' + SUBSTRING(T.sPhoneNum0,4,3) + '-' + SUBSTRING(T.sPhoneNum0,7,4)+ ' x '  + SUBSTRING (T.sPhoneNum0, 11,5)
+  		 WHEN LEN(T.sPhoneNum0)> 3 THEN SUBSTRING(T.sPhoneNum0,1,3) + '-' + SUBSTRING(T.sPhoneNum0,4,5)
+  		Else T.sPhoneNum0 END tenhomephone,
+T.sEmail tenemail,
+rtrim(T.SADDR1) tenantaddr1,
+CASE isnull(rtrim(T.SADDR2), '') when '' then rtrim(t.sCITY) + ', ' + rtrim(t.sSTATE) + ' ' + rtrim(t.sZIPCODE)else rtrim(t.sADDR2) end tenantaddr2,
+CASE isnull(rtrim(T.SADDR2), '') when '' then '' else  rtrim(t.sCITY) + ', ' + rtrim(t.sSTATE) + ' ' + rtrim(t.sZIPCODE) end tenantaddr3,
+
+U.sCode unitcode,
+rtrim(a.SADDR1) unitaddr1,
+CASE isnull(rtrim(a.SADDR2), '') when '' then rtrim(a.sCITY) + ', ' + rtrim(a.sSTATE) + ' ' + rtrim(a.sZIPCODE)else rtrim(a.sADDR2) end unitaddr2,
+CASE isnull(rtrim(a.SADDR2), '') when '' then '' else  rtrim(a.sCITY) + ', ' + rtrim(a.sSTATE) + ' ' + rtrim(a.sZIPCODE) end unitaddr3,
+T.dtMoveIn tenantmoveindt,
+T.dtLeaseFrom tenantleasefromdt,
+T.dtLeaseTo tenantleasetodt,
+HU.dContractRent ContractRent,
+case S.sProgram1d
+ WHEN 'CE' THEN C.dUA11M WHEN 'VO' THEN V.dUA12N WHEN 'MR' THEN M.dUA13I WHEN 'PV' THEN C.dUA11M WHEN 'H' THEN H.dUA15g when 'P' then P.dUA10D END UtilAllow,
+UTDESC.sDesc UnitType,
+U.IBEDROOMS bedsize,
+U.sField1 bathsize,
+U.dSqFt squarefeet,
+
+O.uCode vendorcode,
+CASE isnull(O.sFIRSTNAME, '') when '' then '' else O.sFIRSTNAME + ' ' end + O.uLASTNAME vendorname,
+rtrim(O.sADDR1) vendoraddr1,
+CASE isnull(rtrim(O.sADDR2), '') when '' then rtrim(O.sCITY) + ', ' + rtrim(O.sSTATE) + ' ' + rtrim(O.sZIPCODE)else rtrim(O.sADDR2) end vendoraddr2,
+CASE isnull(rtrim(O.sADDR2), '') when '' then '' else  rtrim(O.sCITY) + ', ' + rtrim(O.sSTATE) + ' ' + rtrim(O.sZIPCODE) end vendoraddr3,
+CASE WHEN SUBSTRING(O.sPHONENUM1,4,1)='-' OR SUBSTRING(O.sPHONENUM1,1,1)='(' THEN O.sPHONENUM1
+       WHEN LEN(RTRIM(O.sPHONENUM1))> 7 AND LEN(RTRIM(O.sPHONENUM1))< 11 THEN '(' + SUBSTRING(O.sPHONENUM1,1,3) + ') ' + SUBSTRING(O.sPHONENUM1,4,3) + '-' + SUBSTRING(O.sPHONENUM1,7,7)
+  		 WHEN LEN(RTRIM(O.sPHONENUM1))> 10 THEN '(' + SUBSTRING(O.sPHONENUM1,1,3) + ') ' + SUBSTRING(O.sPHONENUM1,4,3) + '-' + SUBSTRING(O.sPHONENUM1,7,4)+ ' x '  + SUBSTRING (O.sPHONENUM1, 11,5)
+  		 WHEN LEN(O.sPHONENUM1)> 3 THEN SUBSTRING(O.sPHONENUM1,1,3) + '-' + SUBSTRING(O.sPHONENUM1,4,5)
+  		Else O.sPHONENUM1 END  OwnOfficePhone ,
+CASE WHEN SUBSTRING(O.sPHONENUM0,4,1)='-' OR SUBSTRING(O.sPHONENUM0,1,1)='(' THEN O.sPHONENUM0
+       WHEN LEN(RTRIM(O.sPHONENUM0))> 7 AND LEN(RTRIM(O.sPHONENUM0))< 11 THEN '(' + SUBSTRING(O.sPHONENUM0,1,3) + ') ' + SUBSTRING(O.sPHONENUM0,4,3) + '-' + SUBSTRING(O.sPHONENUM0,7,7)
+  		 WHEN LEN(RTRIM(O.sPHONENUM0))> 10 THEN '(' + SUBSTRING(O.sPHONENUM0,1,3) + ') ' + SUBSTRING(O.sPHONENUM0,4,3) + '-' + SUBSTRING(O.sPHONENUM0,7,4)+ ' x '  + SUBSTRING (O.sPHONENUM0, 11,5)
+  		 WHEN LEN(O.sPHONENUM0)> 3 THEN SUBSTRING(O.sPHONENUM0,1,3) + '-' + SUBSTRING(O.sPHONENUM0,4,5)
+  		Else O.sPHONENUM0 END OwnHomePhone,
+CASE WHEN SUBSTRING(O.sPHONENUM2,4,1)='-' OR SUBSTRING(O.sPHONENUM2,1,1)='(' THEN O.sPHONENUM2
+       WHEN LEN(RTRIM(O.sPHONENUM2))> 7 AND LEN(RTRIM(O.sPHONENUM2))< 11 THEN '(' + SUBSTRING(O.sPHONENUM2,1,3) + ') ' + SUBSTRING(O.sPHONENUM2,4,3) + '-' + SUBSTRING(O.sPHONENUM2,7,7)
+  		 WHEN LEN(RTRIM(O.sPHONENUM2))> 10 THEN '(' + SUBSTRING(O.sPHONENUM2,1,3) + ') ' + SUBSTRING(O.sPHONENUM2,4,3) + '-' + SUBSTRING(O.sPHONENUM2,7,4)+ ' x '  + SUBSTRING (O.sPHONENUM2, 11,5)
+  		 WHEN LEN(O.sPHONENUM2)> 3 THEN SUBSTRING(O.sPHONENUM2,1,3) + '-' + SUBSTRING(O.sPHONENUM2,4,5)
+  		Else O.sPHONENUM2 END OwnFaxNumber,
+O.sEmail OwnEmail,
+
+(SELECT SUM(dAsset6d) from H8Income where itype = 2 and hsum = s.hmy) totalassetcashvalue,
+(SELECT SUM(dIncome6e7d) from H8Income where itype = 2 and hsum = s.hmy) totalassetincome,
+(SELECT SUM(dIncome6e7d) from H8Income where itype = 1 and hsum = s.hmy) totalinctotal,
+(SELECT SUM(dIncMinusExcl7f) from H8Income where itype = 1 and hsum = s.hmy) totalincafterexc,
+(SELECT SUM(DYEARLYEXPENSE) from H8Expense where itype = 1 and hsum = s.hmy) ExpTotal,
+
+s.hmy _Key_,
+'FamilyMembers' _GRID_0,
+'AssetInfo' _GRID_1,
+'IncomeInfo' _GRID_2,
+'ExpenseInfo' _GRID_3
+
+FROM H8Summ S
+INNER JOIN TENANT T ON S.hTenant =  T.hMyPerson
+INNER JOIN UNIT U ON T.hUnit =  U.hMY
+INNER JOIN PROPERTY PR ON PR.hMy = U.hPROPERTY
+INNER JOIN tenStatus ts on t.istatus = ts.istatus
+LEFT JOIN H8UNIT HU ON HU.HUNIT=U.HMY
+LEFT JOIN (SELECT UT.hmy hMy,CASE WHEN ISNULL(sdesc,'') = '' THEN scode ELSE sdesc END sDesc FROM UNITTYPE UT) UTDESC ON UTDESC.hMy = U.hUNITTYPE
+LEFT JOIN ADDR A ON A.hPointer =  U.hMY and A.iType = 4
+LEFT JOIN Person E On E.hMy = S.hCaseworker And E.iPersonType = 79
+LEFT JOIN H8Public P ON S.hMy =  P.hSum
+LEFT JOIN H8Certif C ON S.hMy =  C.hSum
+LEFT JOIN H8Vouch V ON S.hMy = V.hSum
+LEFT JOIN H8ModReh M ON S.hMy =  M.hSum
+LEFT JOIN H8HomeOwnership H ON S.hMy =  H.hSum
+LEFT JOIN PERSON O ON O.hMy = case S.sProgram1d
+                         WHEN 'CE' THEN C.hVendor
+                         WHEN 'VO' THEN V.hVendor
+                         WHEN 'MR' THEN M.hVendor
+						 WHEN 'PV' THEN C.hVendor
+						 WHEN 'H' THEN H.hVendor
+						 ELSE S.hVendor
+						 END
+WHERE S.BMASTERRECD = -1
+      #conditions#
+ORDER BY T.hMyPerson
+//End Select
+
+//Select FamMem
+SELECT F.hSum _Key_,
+F.hTenant,
+F.IMEMBERNUM membernum,
+F.sFirstName + CASE isnull(F.sMI, '') when '' then '' else ' ' + F.sMI end + ' ' + F.sLastName membername,
+F.iAge memberage,
+F.sSex membersex,
+F.sRelation memberrelation,
+F.sCitizen membercitizen,
+F.sDisability memberdisability,
+Case F.sRace1 when 'Y' then 'White' else Case F.sRace2 when 'Y' then 'Black/African American' else Case F.sRACE3 when 'Y' then 'American Indian/Alaska Native' else Case F.sRace4 when 'Y' then 'Asian' else Case F.sRace5 when 'Y' then 'Native Hawaiian/Other Pacific Islander' end end end end end memberrace,
+Case F.sEthnicity when 1 then 'Hispanic or Latino' when 2 then 'Not Hispanic or Latino' end memberethnicity
+FROM h8family F
+WHERE 1=1
+ORDER BY F.ImemberNUM
+//End Select
+
+//Select Asset
+SELECT I.hSum _Key_,
+I.hTenant,
+I.sFirstName + CASE isnull(I.sMI, '') when '' then '' else ' ' + I.sMI end + ' ' + I.sLastName membername,
+I.sAssetDesc6b typeofasset,
+I.sHAUse6c7c assetphause,
+I.dAsset6d assetcashvalue,
+I.dIncome6e7d assetincome
+FROM H8Income I
+WHERE 1=1
+AND I.iType = 2
+
+UNION ALL
+
+SELECT
+s.hmy _Key_,
+null,
+'NO ASSETS DECLARED',
+'',
+'',
+null,
+null
+FROM H8Summ s
+left outer join H8Income I on s.hmy = I.hSum AND I.iType = 2
+WHERE 1=1
+Group by s.hmy
+HAVING count(I.hmy) = 0
+//End Select
+
+//Select IncInfo
+SELECT I.hSum _Key_,
+I.hTenant,
+I.sFirstName + CASE isnull(I.sMI, '') when '' then '' else ' ' + I.sMI end + ' ' + I.sLastName membername,
+I.sIncCode7b inctype,
+I.sHAUse6c7c incphause,
+I.dIncome6e7d inctotal,
+I.dExclIncPerYr7e incexcluded,
+I.dIncMinusExcl7f incafterexc,
+I.dEarnDeduct7g incdeduction
+FROM H8Income I
+WHERE 1=1
+AND I.iType = 1
+
+UNION ALL
+
+SELECT
+s.hmy _Key_,
+null,
+'NO INCOME DECLARED',
+'',
+'',
+null,
+null,
+null,
+null
+FROM H8Summ s
+left outer join H8Income I on s.hmy = I.hSum AND I.iType = 1
+WHERE 1=1
+Group by s.hmy
+HAVING count(I.hmy) = 0
+//End Select
+
+//Select ExpInfo
+SELECT E.hSum _Key_,
+E.hTenant,
+E.sFirstName + CASE isnull(E.sMI, '') when '' then '' else ' ' + E.sMI end + ' ' + E.sLastName membername,
+LTrim(RTrim(E.SEXPENSETYPE)) ExpType,
+E.SDESCRIPTION ExpDesc,
+E.DYEARLYEXPENSE ExpTotal
+FROM H8Expense E
+WHERE 1=1
+AND E.iType = 1
+
+UNION ALL
+
+SELECT
+s.hmy _Key_,
+null,
+'NO EXPENSES DECLARED',
+'',
+'',
+null
+FROM H8Summ s
+left outer join h8Expense E on s.hmy = E.hSum AND E.iType = 1
+WHERE 1=1
+Group by s.hmy
+HAVING count(e.hmy) = 0
+//End Select
+
+//Format
+LetterDate MMMM DD, YYYY
+inc30 $####.##
+inc40 $####.##
+//End Format

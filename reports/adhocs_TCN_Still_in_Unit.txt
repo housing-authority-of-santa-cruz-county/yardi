@@ -45,13 +45,13 @@ TCN Still in Unit
               , Review58SUMM.dAdjMonthlyInc9d*0.4 'AdjMonthly40'
               , CASE WHEN ISNULL('#Field113#', '') <> '' then '#Field113#' ELSE REVIEW58VOUCH.ibedroom12a END 'VchSize'
               , Review58SUMM.dteffective2b 'Review58EffDate'
-              , v.scontact 'LLNAME'
+              , case when isnull(v.scontact,'') <> '' THEN v.scontact ELSE v.ulastname end 'LLNAME'
 FROM VENDOR v INNER JOIN Person o on o.hmy = v.hMyPerson AND o.iPersonType=5
  inner JOIN h8unit ON h8unit.hVendor = o.hmy
  inner JOIN unit ON h8unit.hUnit = unit.hMy
  inner JOIN tenant on tenant.hUnit = unit.hmy
  INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
- inner JOIN h8Vouch Review58vouch ON (Review58SUMM.hMy = Review58vouch.hsum)
+ left JOIN h8Vouch Review58vouch ON (Review58SUMM.hMy = Review58vouch.hsum)
  cross join board_commishes_footer_RSC rsc
  WHERE 1 = 1
  #conditions#

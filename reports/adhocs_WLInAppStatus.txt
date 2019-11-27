@@ -1,0 +1,75 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_WLInAppStatus.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    07/23/2019 - Created by ceciliaj
+    09/24/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+//End Database
+
+//Title
+WL In App Status Report
+//End Title
+
+//Select
+ SELECT  WLTen.scode 'AppTenCode'
+              , WLTen.sFirstName + ' ' + WLTen.sLastName 'AppName'
+              , (CASE WHEN ISNULL((select sValue from paramopt2 where upper(stype) = 'ENABLEDATAENCRYPTION'),'')='-1' THEN DBO.DB_DataDecrypt(wla.shohssnSecure) ELSE wla.shohssn END) 'AppHOHSSN'
+              , wla.sField0 'Language'
+              , Case WHEN tenant.sAddr1='Pending' THEN  wla.sField1 ELSE tenant.sAddr1 END 'TenMailAddr1'
+              , CASE WHEN tenant.sAddr2='Pending' THEN '' ELSE tenant.sAddr2 END 'TenMailAddr2'
+              , CASE WHEN isNull(tenant.sCity,'') = 'Pending' THEN LEFT(wla.sField2, charindex(' CA',wla.sField2)) ELSE tenant.sCity END 'TenMailCity'
+              , CASE WHEN isNull(tenant.sState,'') = '' THEN 'CA' ELSE tenant.sState END 'TenMailState'
+              , CASE WHEN isNull(tenant.sZipCode,'') = '' THEN RIGHT(wla.sField2,charindex('CA ',wla.sField2)) ELSE tenant.sZipCode END 'TenMailZip'
+              , wlwaitlist.sCode 'WLCode'
+              , wlwaitlistwlapplic.sstatus 'WsiStatus'
+              , CASE WHEN UPPER(wlwaitlistwlapplic.sstatus) = 'ON LIST' THEN WLSS.sSubStatus ELSE '' END 'WLSubOnListSubStatus'
+              , Review58SUMM.dteffective2b 'Review58EffDate'
+ FROM  Property p  INNER JOIN Tenant ON (p.hMy = tenant.hProperty)
+ LEFT JOIN wlapplic wla ON (wla.htenant = tenant.hmyperson)
+ LEFT JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ LEFT JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+ LEFT JOIN WLWaitListSubStatus WLSS ON (WLSS.hWLStatus = wlwaitlistwlapplic.hMy)
+ INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  Review58SUMM.dteffective2b DESC, WLTen.sFirstName + ' ' + WLTen.sLastName ASC
+//End Select
+
+//Columns
+//Type  Name   Head1   Head2   Head3   Head4   Show   Color   Formula  Drill  Key   Width  Total  Control  Mandatory  List  validate  Default  Keep  Suppress
+T    ,,"Tenant Code" ,"" ,"" ,"" ,Y  ,  , , 1  , ,10 ,N  ,,,,,,,,
+T    ,,"Name" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"HOH SSN" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Language" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Mailing Address 1" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Mailing Address 2" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Mailing City" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Mailing State" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Mailing Zip" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Waiting list" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"Status" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+T    ,,"On List Sub Status" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+A    ,,"Effective Date (2b)" ,"" ,"" ,"" ,Y  ,  , ,   ,  ,10 ,N  ,,,,,,,,
+//End Columns
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"Field10"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field10#') ",     ,N    ,   ,Y
+0    ,T    ,"Field19"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field19#') ",     ,N    ,   ,Y
+M    ,T    ,"Field118"    ,"Status"    ,  ,"^On List^Rejected^Refused^Removed^Selected^Issued/Offer^Leased^"    ,"wlwaitlistwlapplic.sstatus  IN  ('#Field118#') ",     ,N    ,   ,Y
+M    ,T    ,"Field119"    ,"On List Sub Status"    ,  ,"SELECT sDesc FROM Lookup WHERE sListName = 'PHA-WaitingList-OnList-SubStatus'"    ,"CASE WHEN UPPER(wlwaitlistwlapplic.sstatus) = 'ON LIST' THEN WLSS.sSubStatus ELSE '' END  IN  ('#Field119#') ",     ,N    ,   ,Y
+R    ,A    ,DAT120:DAT220    ,"Effective Date (2b)"    ,  ,""    ,"Review58SUMM.hMy =  dbo.fh8_prh_GetLatest58(Review58SUMM.htenant, '#DAT220#', '123456789ABCDEF') AND Review58SUMM.dteffective2b >= '#DAT120#'",     ,Y    ,   ,Y
+//End Filter

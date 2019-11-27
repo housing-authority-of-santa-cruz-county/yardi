@@ -34,8 +34,9 @@ TCN Out of Unit
               , REVIEW58VOUCH.ibedroom12a 'VchSize'
               , Review58SUMM.dteffective2b 'Review58EffDate'
               , tenant.dtMoveOut 'MoveOut'
+              , DATEADD(270,'days',tenant.dtMoveOut) 'VoucherExpirationDate'
               , Review58SUMM.dTTPAdj9f 'AdjMonthly30'
-              , Review58SUMM.dAdjMonthlyInc9d*0.4 'AdjMonthly40' 
+              , Review58SUMM.dAdjMonthlyInc9d*0.4 'AdjMonthly40'
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
  INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)

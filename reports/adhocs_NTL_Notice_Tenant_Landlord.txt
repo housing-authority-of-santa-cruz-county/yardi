@@ -1,0 +1,106 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_NTL_Notice_Tenant_Landlord.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    08/30/2019 - Created by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OutputToPdf
+//End Options
+
+//Title
+NTL Notice Tenant Landlord
+//End Title
+
+//Select Primary
+ SELECT TOP 1 'Y_NTL_Request_Copy_Lease.docx' _FILE_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , p.sCode 'PropCode'
+              , unit.sCode 'UnitCode'
+              , tenant.sCode 'TenCode'
+              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN DATEADD(day,10,GetDate()) ELSE '#FillDate11#' END 'EndDate'
+              , (SELECT STUFF((select '^' + Docs FROM (SELECT 'Signed Copies of HAP contract' Docs
+				UNION
+				SELECT 'Tenancy Addendum' Docs
+				UNION
+				SELECT 'W-9' Docs
+        UNION
+        SELECT 'Tenant / landlord lease - Lease must reference HUD Tenancy Addendum - suggested wording: HUD Tenancy Addendum is incorporated in this lease.' Docs
+        UNION
+        SELECT 'Direct Deposit Authorization Form' DOCS) as X WHERE Docs IN ('#FillText11#') FOR XML PATH('')),1,1,'')) as Docs
+            , (SELECT STUFF((select '^' + Reasons FROM (SELECT 'Please include effective date of term' Reasons
+      UNION
+      SELECT 'Please include / correct rent amount.' Reasons
+      UNION
+      SELECT 'Please include / correct utilities' Reasons
+      UNION
+      SELECT 'Please include city name with unit address' Reasons
+      UNION
+      SELECT 'Lease must reference HUD Tenancy Addendum - suggested wording: HUD Tenancy Addendum is incorporated in this lease.' Reasons
+      UNION
+      SELECT 'Please include names of children and adults in the unit' Reasons
+      UNION
+      SELECT 'Please specify who will provide stove and refrigerator' Reasons
+      UNION
+      SELECT 'Please include term of lease' Reasons
+      UNION
+      SELECT 'Tenant and landlord must both sign lease/rental agreement' Reasons) as X WHERE Reasons IN ('#FillText12#') FOR XML PATH('')),1,1,'')) as Reasons
+              , '#FillText11#' 'Docs2'
+              , '#FillText12#' 'Reasons2'
+              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
+              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + char(10) else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + char(10) else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
+              , CASE WHEN isnull(pr.sFedName,'') <> '' THEN pr.sFedName ELSE pr.UP_LASTNAME END 'LLName'
+              , pr.saddr1 + CASE
+              WHEN pr.saddr2 = null THEN ''
+              WHEN pr.saddr2 = '' THEN ''
+              ELSE char(10) + pr.saddr2
+              END + char(10) + pr.scity + ', ' + pr.sstate + ' ' + pr.szipcode 'LLAddress'
+              , GETDATE() 'LetterDate'
+ FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+ INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+ INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)
+ left join vendor v on v.hmyperson = Review58SUMM.hvendor
+ left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
+ cross join board_commishes_footer_RSC rsc
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  Review58SUMM.dteffective2b DESC
+//End Select Primary
+
+//Format
+EndDate MMMM DD, YYYY
+LetterDate MMMM DD, YYYY
+Docs MultiLine
+Reasons MultiLine
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
+0    ,T    ,"Field11"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field11#') ",     ,N    ,   ,Y
+0    ,T    ,"Field12"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
+0    ,A    ,"FillDate11"    ,"Receive by Date"    ,  ,""    ,"",     ,N    ,   ,Y
+M    ,T    ,"FillText11"    ,"Documents"    ,  ,"Signed Copies of HAP contract^Tenancy Addendum^W-9^Tenant / landlord lease - Lease must reference HUD Tenancy Addendum - suggested wording: HUD Tenancy Addendum is incorporated in this lease.^Direct Deposit Authorization Form"    , ,     ,N    ,   Y,Y
+M    ,T    ,"FillText12"    ,"Changes"    ,  ,"Please include effective date of term^Please include / correct rent amount.^Please include / correct utilities^Please include city name with unit address^Lease must reference HUD Tenancy Addendum - suggested wording: HUD Tenancy Addendum is incorporated in this lease.^Please include names of children and adults in the unit^Please specify who will provide stove and refrigerator^Please include term of lease^Tenant and landlord must both sign lease/rental agreement"    , ,     ,N    ,   Y,Y
+//End Filter

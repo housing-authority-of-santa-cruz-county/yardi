@@ -44,7 +44,7 @@ TCN Out of Unit
               , CASE WHEN ISNULL('#Field113#', '') <> '' then '#Field113#' ELSE REVIEW58VOUCH.ibedroom12a END 'VchSize'
               , Review58SUMM.dteffective2b 'Review58EffDate'
               , tenant.dtMoveOut 'MoveOut'
-              , DATEADD(day, 270, tenant.dtMoveOut) 'VoucherExpirationDate'
+              , '#FillDate11#' 'VoucherExpirationDate'
               , Review58SUMM.dTTPAdj9f 'AdjMonthly30'
               , Review58SUMM.dAdjMonthlyInc9d*0.4 'AdjMonthly40'
  FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
@@ -69,4 +69,5 @@ VoucherExpirationDate MM/DD/YYYY
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
 0    ,T    ,"Field10"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
 0    ,I    ,"Field113"    ,"# Voucher Bedrooms (12a)"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,A    ,"FillDate11"    ,"Submit by Date"    ,  ,""    ,"",     ,N    ,   ,Y
 //End Filter

@@ -1,0 +1,104 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_PBU_Unit_Available.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    10/07/2019 - Created by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+PBU Unit Available
+//End Title
+
+//Select Primary
+SELECT DISTINCT  'y_PBU_Main' + CASE WHEN Tenant.sfields0 = 'Spanish' OR wla.sfield0 = 'Spanish' THEN '_Spanish' ELSE '' END + '.docx' _FILE_NL1_
+, CASE WHEN '#FillText11#' = 'El Centro' THEN 'ElCentro'
+       WHEN '#FillText11#' = 'Sunrise' THEN 'Sunrise'
+       WHEN '#FillText11#' = 'St. Stephens' THEN 'StStephens'
+       WHEN '#FillText11#' = 'Pippin Orchards' THEN 'PippinOrchards'
+       WHEN '#FillText11#' = 'Resetar' THEN 'Resetar'
+       WHEN '#FillText11#' = 'Regular S8' THEN 'Section8'
+       ELSE ''
+       END +
+       CASE WHEN Tenant.sfields0 = 'Spanish' OR wla.sfield0 = 'Spanish' THEN '_Spanish'
+       ELSE ''
+       END + '.docx' _FILE_NL2_
+,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                rsc.chairperson                             chairperson,
+                rsc.viceChairperson                         viceChairperson,
+                rsc.boardmember1                            boardmember1,
+                rsc.boardmember2                            boardmember2,
+                rsc.boardmember3                            boardmember3,
+                rsc.boardmember4                            boardmember4,
+                rsc.boardmember5                            boardmember5,
+                rsc.execDirector                            execDirector
+             , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN 'Date of Name Placement' else 'Sequence#' END 'dtappliedtext'
+             , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN 'Fecha de colocación del nombre' else 'Secuencia#' END 'dtappliedtexts'
+             , CASE WHEN '#FillText11#' = 'Regular S8' THEN 'Please be advised that your date of placement or ranking number, whichever is applicable, will not change. If you are not interested in exchanging a Section 8 Housing Choice Voucher (HCV) for this Project Based Voucher unit, you do not have to respond to this letter and your name will remain on the Section 8 HCV waiting list. ' ELSE '' END S8PlaceText
+             , CASE WHEN '#FillText11#' = 'Regular S8' THEN 'Tenga en cuenta que su fecha de colocación o número de clasificación, según corresponda, no cambiará. Si no está interesado en intercambiar un Cupón de Elección de Vivienda (HCV) de la Sección 8 para esta unidad de Cupón Basado en el Proyecto, no tiene que responder a esta carta y su nombre permanecerá en la lista de espera del HCV de la Sección 8. ' ELSE '' END S8PlaceTextS
+             , tenant.sCode 'TenCode'
+             , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
+             , CASE WHEN tenant.sAddr1='Pending' THEN wla.sField1+'^'+wla.sField2
+               Else
+               case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end end 'MailAddress'
+             , GETDATE() 'LetterDate'
+             , GETDATE() 'LetterDateS'
+             , Tenant.sCode tcode
+             , unit.sCode ucode
+             , '#Field114#' LLPhone
+             , wlwaitlist.sDesc wlCode
+             , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN wla.dtapplied ELSE null END 'dtapplied'
+             , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN null ELSE cast(wlwaitlistwlapplic.iscorepoints as varchar) end 'sequence'
+             , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN wla.dtapplied ELSE null END 'dtappliedS'
+             , CASE WHEN ISNULL('#Field113#', '') <> '' then '#Field113#' ELSE CAST(unit.ibedrooms as varchar) END 'bednum'
+             , case when isnull(UAddr.saddr1, '') <> '' then CASE WHEN CHARINDEX(',',Uaddr.saddr1) > 0 THEN rtrim(LEFT(Uaddr.saddr1, CHARINDEX(',', Uaddr.saddr1)-1 )) WHEN CHARINDEX('#',Uaddr.saddr1) > 0 THEN rtrim(LEFT(Uaddr.saddr1, CHARINDEX('#', Uaddr.saddr1)-1 )) ELSE Uaddr.saddr1 end + '^' else '' end + case when isnull(UAddr.sCity, '') <> '' then ltrim(rtrim(UAddr.sCity)) else '' end + case when isnull(UAddr.sState, '') = '' and isnull(UAddr.sZipCode, '') = '' then ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) else ', ' + ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) end 'unitaddress'
+FROM Tenant
+LEFT JOIN wlapplic wla ON (wla.hTenant = Tenant.hMyPerson)
+LEFT JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)
+LEFT JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+LEFT JOIN WLApplicPrefs  ON (WLApplicPrefs.HWLApplic = wla.hMy)
+LEFT JOIN WLPreference  ON (WLPreference.hMy = WLApplicPrefs.HPreference)
+cross join board_commishes_footer_RSC rsc,Unit LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
+
+WHERE 1 = 1
+#conditions#
+ORDER BY  tenant.sCode ASC
+//End Select Primary
+
+//Format
+LetterDate MMMM DD, YYYY
+LetterDateS DD/MM/YYYY
+dtapplied MMMM DD, YYYY
+dtappliedS DD/MM/YYYY
+MailAddress MultiLine
+unitaddress MultiLine
+//End Format
+
+//Filter
+//SCLiveWk
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"Field110"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field110#') ",     ,Y    ,   ,Y
+0    ,T    ,"Field10"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
+0    ,T    ,"Field112"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field112#') ",     ,Y    ,   ,Y
+R    ,A    ,DAT15:DAT25    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wla.dtapplied, 101) as DateTime)  Between  '#dat15#' AND '#dat25#'",     ,N    ,   ,Y
+R   ,I    ,"VAL16:VAL26"    ,"Score"    ,  ,""    ,"wlwaitlistwlapplic.iscorepoints Between #VAL16# AND #VAL26#",     ,N    ,   ,Y
+0    ,T    ,"Field119"    ,"Preference Code"    ,  ,""    ,"LTRIM(RTRIM(ISNULL( WLPreference.sCode , ''))) like LTRIM(RTRIM(ISNULL('%#Field119#%', ' ')))",     ,N    ,   ,Y
+L    ,T    ,"Field18"    ,"HOH Gender"    ,  ,"M^F^Any"    ,"1= CASE WHEN '#Field18#' = 'Any' THEN 1 ELSE CASE WHEN wla.shohsex = '#Field18#' THEN 1 ELSE 0 END END",     ,N    ,   ,Y
+L    ,T    ,"FillText11"    ,"Complex Name"    ,  ,"Regular S8^El Centro^Sunrise^St. Stephens^Resetar^Pippin Orchards"    ,"",     ,N    ,   ,Y
+0    ,T    ,"Field113"    ,"# Bedrooms"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"Field114"    ,"Phone Number"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

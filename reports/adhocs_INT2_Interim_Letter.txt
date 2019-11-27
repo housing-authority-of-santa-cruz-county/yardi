@@ -1,0 +1,98 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_INT2_Interim_Letter.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/16/2019 - Created by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+INT2 Interim Letter
+//End Title
+
+//LIST INT2_Interim_Letter
+Y_INT2_No_Action.docx
+//END LIST
+
+//Select Primary
+ SELECT  'INT2_Interim_Letter' _LIST_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , p.sCode 'PropCode'
+              , unit.sCode 'UnitCode'
+              , tenant.sCode 'tcode'
+              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'ToName'
+              , case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end 'MailAddress'
+              , '#FillText11#' 'NoAction'
+              , '#FillText12#' 'ChangeHoH'
+              , '#FillText13#' 'CommentsEnglish'
+              , '#FillText14#' 'CommentsSpanish'
+              , char(10)+char(13)+char(10)+char(13)+'^'+ CASE when isnull('#FillText17#','') in ('True') then '^^Based on the application to add new members to the household, your request to add #FillText11# is denied.  #FillText11# is prohibited from moving into the household and occupying the assisted unit.
+
+              ^The criminal history part of the application was not completed truthfully.  The application stated that the Housing Authority will conduct a criminal background check on all applications to verify the accuracy of the information provided and collect any additional information deemed necessary by the Housing Authority.  In addition, it stated that if you lie on this form, or if you omit information, the application will be denied.  By signing the application, you and #FillText11# were also certifying that the information was true, complete, and correct.
+
+              ^The Housing Authority has obtained criminal activity information that was not declared on the application as required by you and #FillText11#.
+
+              ^As a reminder of the Section 8 Housing Voucher Program Family Obligations, please read and follow the program rules enclosed.  Failure to follow the program rules may jeoardize your continued assistance.  In particular, you must request in writing and receive written approval from the Housing Authority before any new member becomes an occupant of the dwelling unit.'
+               else '' end + case when isnull('#FillText12#','') in ('True') then '^^Your request to change the head of your household has been denied.  The Housing Authority will only allow a change to the head of household in situations where the head of household has died or leaves the household, or if the head of household no longer has the legal capacity to enter into a lease.' else '' end + case when isnull('#FillText15#','') in ('True') then '^^Your request to add a new family member has been denied. The Housing Authority will only allow the followings adults to be added to the household:^
+•	The spouse, registered domestic partner, or significant other of the head of household.
+•	The parent of the head of household, or the apparent of the head of household’s spouse, registered domestic partner.
+•	The child of the head of household, or the child of the head of household’s spouse or registered domestic partner.
+•	The grandparent of the head of household, or the grandparent of the head of household’s spouse of registered domestic partner.
+•	The grandchild of the head of household, or the grandchild of the head of household’s spouse or registered domestic partner
+' else '' end + case when isnull('#FillText16#','') in ('True') then '^^The Housing Authority will only allow the followings children to be added to the household:^
+•	Minor birth child of any existing household member.
+•	The child of the head of household, or the child of the head of household’s spouse or registered domestic partner.
+•	The grandchild of the head of household or the grandchild of the head of household’s spouse or registered domestic partner.
+^Therefore we have not made any changes to your housing assistance.
+' else '' end + char(10)+char(13) 'DeniedPerson'
+              , GETDATE() 'LetterDate'
+ FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+ INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+ cross join board_commishes_footer_RSC rsc
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  p.sCode ASC
+//End Select Primary
+
+//Format
+MailAddress Multiline
+LetterDate MMMM DD, YYYY
+DeniedPerson Multiline
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
+0    ,T    ,"Field11"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field11#') ",     ,N    ,   ,Y
+0    ,T    ,"Field12"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field12#') ",     ,N    ,   ,Y
+L    ,T    ,"FillText12"    ,"Change of HOH Denied?"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText13"    ,"Comments (English)"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText14"    ,"Comments (Spanish)"    ,  ,""    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText15"    ,"Addition of Adult to Household denied"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText16"    ,"Addition of Child to Household denied"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText17"    ,"Addition to Household denied (Criminal)"    ,  ,"False^True"    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText11"    ,"Criminal Name"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

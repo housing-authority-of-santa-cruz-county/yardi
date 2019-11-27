@@ -1,0 +1,88 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_adhocs_ANE_No_Show_Appt.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    10/22/2019 - Created by jonathan
+    10/24/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+ANE No-show Appt.
+//End Title
+
+//LIST adhocs_ANE_No_Show_Appt
+y_ANE_No_Show.docx
+y_ANE_No_Show_1.docx
+y_ANE_No_Show_Spanish.docx
+//END LIST
+//CASE WHEN Tenant.sfields0 = 'Spanish' OR wla.sfield0 = 'Spanish' THEN '_Spanish'
+
+//Select Primary
+ SELECT  'y_ANE_No_Show.docx' _FILE_NL1_
+ , CASE WHEN WLTen.sfields0 = 'Spanish' OR wla.sfield0 = 'Spanish' THEN 'y_ANE_No_Show_Spanish.docx' ELSE '' END _FILE_NL2_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'ApptDate'
+              , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'PrevLetterDate'
+              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'ApptDateSpan'
+              , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'PrevLetterDateSpan'
+              , GETDATE() 'LetterDate'
+              , GETDATE() 'LetterDateSpan'
+              , WLTen.scode 'tcode'
+              , WLTen.sFirstName + ' ' + WLTen.sLastName 'ToName'
+              , case when isnull(WLTen.saddr1, '') <> '' then ltrim(rtrim(WLTen.saddr1)) + '^' else '' end + case when isnull(WLTen.saddr2, '') <> '' then ltrim(rtrim(WLTen.saddr2)) + '^' else '' end + case when isnull(WLTen.sCity, '') <> '' then ltrim(rtrim(WLTen.sCity)) else '' end + case when isnull(WLTen.sState, '') = '' and isnull(WLTen.sZipCode, '') = '' then ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) else ', ' + ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) end 'MailAddress'
+              , wlwaitlist.sDesc 'wlcode'
+              , wla.dtapplied 'dtapplied'
+              , wla.dtapplied 'dtappliedspan'
+ FROM  Property p  INNER JOIN Tenant wlTenant ON (wlTenant.hProperty = p.hMy)
+ INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
+ INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+ cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+//End Select Primary
+
+//Format
+ApptDate MMMM DD, YYYY
+ApptDateSpan DD MMMM YYYY
+PrevLetterDate MMMM DD, YYYY
+PrevLetterDateSpan DD MMMM YYYY
+LetterDate MMMM DD, YYYY
+LetterDateSpan DD MMMM YYYY
+MailAddress Multiline
+dtapplied MM/DD/YYYY
+dtappliedspan DD/MM/YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,A    ,"FillDate11"    ,"Appointment Date"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,A    ,"FillDate12"    ,"Previous Letter Date"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"Field19"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field19#') ",     ,Y    ,   ,Y
+//End Filter
