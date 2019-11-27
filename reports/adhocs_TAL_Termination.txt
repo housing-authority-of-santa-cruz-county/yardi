@@ -31,10 +31,12 @@ HUD-5380.pdf
 //END LIST
 
 //Select Primary
-SELECT CASE WHEN Tenant.sUnitCode = 'PENDING' AND Tenant_Landlord.Tenant_Landlord= 1 THEN '' ELSE 'Y_TAL_Termination_Assistance.docx' END _FILE_NL1_
-, case when Tenant_Landlord.Tenant_Landlord= 0 then 'HUD-5380.pdf'
+SELECT top 2 CASE WHEN Tenant.sUnitCode = 'PENDING' AND Tenant_Landlord.Tenant_Landlord= 1 THEN '' ELSE CASE WHEN tenant.sfields0 = 'Spanish' AND Tenant_Landlord.Tenant_Landlord= 0 THEN 'Y_TAL_Termination_Assistance_Spanish.docx' ELSE 'Y_TAL_Termination_Assistance.docx' END END _FILE_NL1_
+, case WHEN Tenant_Landlord.Tenant_Landlord= 0 AND tenant.sfields0 = 'Spanish' THEN 'Y_TAL_Termination_Assistance.docx' ELSE '' END _FILE_NL2_
+, case when Tenant_Landlord.Tenant_Landlord= 0 then 'HUD-5380'
 when Tenant_Landlord.Tenant_Landlord= 1 then ''
-else '' end _FILE_NL2_
+else '' end + CASE WHEN tenant.sfields0 = 'Spanish' THEN '_Spanish.pdf' else '.pdf' END _FILE_NL3_
+, case WHEN Tenant_Landlord.Tenant_Landlord= 0 AND tenant.sfields0 = 'Spanish' THEN 'HUD-5382_Spanish.pdf' else '' END _FILE_NL4_
 ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                 rsc.chairperson                             chairperson,
                 rsc.viceChairperson                         viceChairperson,
@@ -45,6 +47,7 @@ else '' end _FILE_NL2_
                 rsc.boardmember5                            boardmember5,
                 rsc.execDirector                            execDirector
             , GETDATE() 'LetterDate'
+            , GETDATE() 'LetterDateS'
             , p.sCode 'PropCode'
             , unit.sCode 'UnitCode'
             , tenant.sCode 'TenCode'
@@ -61,18 +64,24 @@ else '' end _FILE_NL2_
             else '' end RecptType
             , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'EndDate'
             , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'LetterMailDate'
+            , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'EndDateS'
+            , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'LetterMailDateS'
             ,case when Tenant_Landlord.Tenant_Landlord= 0 then Ltrim(Isnull(Tenant.sFirstName,'')+' '+ IsNull(Tenant.sLastName,''))
 when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(O.sFirstName,'')+' '+ IsNull(O.uLastName,''))
 else  '' end  ToName
             , case when Tenant_Landlord.Tenant_Landlord=0 then  isnull(tenant_addrr.tenantaddress,'')
  when Tenant_Landlord.Tenant_Landlord= 1 then isnull(Owner_addrr.Owneraddress,'')
  else  '' end MailAddress
-            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', and no further housing assistance payments will be made on your behalf. As of '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN CAST(GetDate() as varchar) ELSE cast('#FillDate12#' as varchar) END + ', you will become responsible for the full amount of the rent, which is ' + cast(REVIEW58VOUCH.dCR12p as varchar) + ' per month.' END 'InUnitText'
+            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', and no further housing assistance payments will be made on your behalf. As of '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN convert(varchar,GetDate(),107) ELSE convert(varchar,'#FillDate12#',107) END + ', you will become responsible for the full amount of the rent, which is $' + ISNULL(convert(varchar(16),REVIEW58VOUCH.dCR12p,0),'0.00') + ' per month.' END 'InUnitText'
+            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', y ya no se harán más pagos de asisitencia de vivienda en nombre suyo. A partir de '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN convert(varchar,GetDate(),103) ELSE convert(varchar,'#FillDate12#',103) END + ', Ud. será responsable de pagar la suma completa de renta que es $' + ISNULL(convert(varchar(16),REVIEW58VOUCH.dCR12p,0),'0.00') + ' por mes.' END 'InUnitTextS'
+            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '^' ELSE CASE WHEN Tenant_Landlord.Tenant_Landlord= 1 THEN ' ^The above listed tenant was sent a copy of this letter.^ ' ELSE ' ^The above listed Landlord was sent a copy of this letter.^ ' END END 'LLCopy'
+            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '^' ELSE CASE WHEN Tenant_Landlord.Tenant_Landlord= 1 THEN ' ^Al inquilino nombrado arriba se le envió una copia de esta carta.^ ' ELSE ' ^Al propietario nombrado arriba se le envió una copia de esta carta.^ ' END END 'LLCopyS'
 FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
 INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
 LEFT JOIN TenStatus TenStatus ON (Tenant.iStatus = TenStatus.iStatus)
 INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
 LEFT JOIN h8Vouch Review58vouch ON (Review58SUMM.hMy = Review58vouch.hsum)
+LEFT JOIN H8Certif Review58Certif ON (Review58Certif.hsum = Review58SUMM.hMy)
 LEFT JOIN H8Unit H8U on H8U.hUnit = Unit.hMy
 LEFT JOIN Person O on O.hMy = H8U.hVendorLtr
     LEFT JOIN (
@@ -108,16 +117,23 @@ WHERE 1 = 1
 AND p.itype = 3
 AND Review58SUMM.dteffective2b=(select max(Review58SUMM.dteffective2b) from h8Summ Review58SUMM INNER JOIN tenant t on (t.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0) WHERE t.scode = tenant.scode )
  #conditions#
-ORDER BY Review58EffDate Desc
+ORDER BY Review58EffDate Desc, dtMod1 Desc
 // ORDER BY  CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END ASC
 //End Select Primary
 
 //Format
 LetterMailDate MMMM DD, YYYY
+LetterMailDateS DD/MM/YYYY
 EndDate MMMM DD, YYYY
+EndDateS DD/MM/YYYY
 LetterDate MMMM DD, YYYY
+LetterDateS DD/MM/YYYY
 TenFullAddress Multiline
 Review58EffDate MM/DD/YYYY
+LLCopy MultiLine
+LLCopyS MultiLine
+InUnitText MultiLine
+InUnitTextS MultiLine
 //End Format
 
 //Filter

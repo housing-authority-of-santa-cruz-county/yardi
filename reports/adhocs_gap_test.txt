@@ -1,0 +1,55 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_gap_test.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    11/15/2019 - Created by jonathan
+    11/15/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+gap test
+//End Title
+
+//Select Primary
+ SELECT  'y_gaptest.docx' _FILE_
+              , CASE '#FillText11#' WHEN '' THEN '#FillText11#' ELSE '#FillText11#' + char(10)+char(13) end 'field1'
+              , '#FillText12#' 'field2'
+              , '#FillText13#' 'field3'
+              , '#FillText14#' 'field4'
+              , GETDATE() 'LetterDate'
+              , tenant.sCode 'TenCode'
+ FROM  Property p  INNER JOIN Tenant ON (p.hMy = tenant.hProperty)
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+ ORDER BY  p.hMy
+//End Select Primary
+
+//Format
+LetterDate MMMM DD, YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"FillText11"    ,"field1"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText12"    ,"field2"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText13"    ,"field3"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText14"    ,"field4"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"Field19"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field19#') ",     ,N    ,   ,Y
+//End Filter

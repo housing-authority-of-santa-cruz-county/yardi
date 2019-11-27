@@ -51,7 +51,7 @@ TCN Out of Unit
  INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
  INNER JOIN h8Summ Review58SUMM ON (tenant.hmyperson = Review58SUMM.htenant)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
  LEFT JOIN h8Vouch Review58vouch ON (Review58SUMM.hMy = Review58vouch.hsum)
- cross join board_commishes_footer_RSC rsc,
+ cross join board_commishes_footer_RSC rsc
  WHERE 1 = 1
  AND p.itype = 3
  #conditions#
