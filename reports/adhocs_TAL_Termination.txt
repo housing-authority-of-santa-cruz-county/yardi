@@ -48,6 +48,9 @@ else '' end + CASE WHEN tenant.sfields0 = 'Spanish' THEN '_Spanish.pdf' else '.p
                 rsc.execDirector                            execDirector
             , GETDATE() 'LetterDate'
             , GETDATE() 'LetterDateS'
+            ,day(getdate()) as LetterDateSPday
+            ,dbo.fn_ebhGetMonthName (GetDate(), 'Spanish') As 'LetterDateSPmo'
+            ,year(getdate()) as LetterDateSPyear
             , p.sCode 'PropCode'
             , unit.sCode 'UnitCode'
             , tenant.sCode 'TenCode'
@@ -65,15 +68,21 @@ else '' end + CASE WHEN tenant.sfields0 = 'Spanish' THEN '_Spanish.pdf' else '.p
             , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'EndDate'
             , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'LetterMailDate'
             , CASE WHEN '#FillDate12#' = '01/01/1900' THEN GetDate() ELSE '#FillDate12#' END 'EndDateS'
+            , CASE WHEN '#FillDate12#' = '01/01/1900' THEN day(getdate()) ELSE day(cast('#FillDate12#' as date)) END as EndDateSPday
+            , CASE WHEN '#FillDate12#' = '01/01/1900' THEN dbo.fn_ebhGetMonthName (GetDate(), 'Spanish') ELSE dbo.fn_ebhGetMonthName ((cast('#FillDate12#' as date)), 'Spanish') END as EndDateSPmo
+            , CASE WHEN '#FillDate12#' = '01/01/1900' THEN year(getdate()) ELSE year(cast('#FillDate12#' as date)) END as EndDateSPyear
             , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'LetterMailDateS'
+            , CASE WHEN '#FillDate11#' = '01/01/1900' THEN day(getdate()) ELSE day(cast('#FillDate11#' as date)) END as LetterMailDateSPday
+            , CASE WHEN '#FillDate11#' = '01/01/1900' THEN dbo.fn_ebhGetMonthName (GetDate(), 'Spanish') ELSE dbo.fn_ebhGetMonthName ((cast('#FillDate11#' as date)), 'Spanish') END as LetterMailDateSPmo
+            , CASE WHEN '#FillDate11#' = '01/01/1900' THEN year(getdate()) ELSE year(cast('#FillDate11#' as date)) END as LetterMailDateSPyear
             ,case when Tenant_Landlord.Tenant_Landlord= 0 then Ltrim(Isnull(Tenant.sFirstName,'')+' '+ IsNull(Tenant.sLastName,''))
 when Tenant_Landlord.Tenant_Landlord= 1 then Ltrim(Isnull(O.sFirstName,'')+' '+ IsNull(O.uLastName,''))
 else  '' end  ToName
-            , case when Tenant_Landlord.Tenant_Landlord=0 then  isnull(tenant_addrr.tenantaddress,'')
- when Tenant_Landlord.Tenant_Landlord= 1 then isnull(Owner_addrr.Owneraddress,'')
+            , case when Tenant_Landlord.Tenant_Landlord=0 then  LTrim(RTrim(isnull(tenant_addrr.tenantaddress,'')))
+ when Tenant_Landlord.Tenant_Landlord= 1 then LTrim(RTrim(isnull(Owner_addrr.Owneraddress,'')))
  else  '' end MailAddress
             , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', and no further housing assistance payments will be made on your behalf. As of '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN convert(varchar,GetDate(),107) ELSE convert(varchar,'#FillDate12#',107) END + ', you will become responsible for the full amount of the rent, which is $' + ISNULL(convert(varchar(16),REVIEW58VOUCH.dCR12p,0),'0.00') + ' per month.' END 'InUnitText'
-            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', y ya no se harán más pagos de asisitencia de vivienda en nombre suyo. A partir de '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN convert(varchar,GetDate(),103) ELSE convert(varchar,'#FillDate12#',103) END + ', Ud. será responsable de pagar la suma completa de renta que es $' + ISNULL(convert(varchar(16),REVIEW58VOUCH.dCR12p,0),'0.00') + ' por mes.' END 'InUnitTextS'
+            , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '.' ELSE ', y ya no se harán más pagos de asisitencia de vivienda en nombre suyo. A partir de '+ CASE WHEN cast('#FillDate12#' as varchar) = cast('01/01/1900' as varchar) THEN cast(day(getdate()) as varchar) + ' de ' + dbo.fn_ebhGetMonthName (GetDate(), 'Spanish') + ' de ' + cast(year(getdate()) as varchar) ELSE cast(day(cast('#FillDate12#' as date)) as varchar) + ' de ' + dbo.fn_ebhGetMonthName (cast('#FillDate12#' as date), 'Spanish') + ' de ' + cast(year(cast('#FillDate12#' as date)) as varchar) END + ', Ud. será responsable de pagar la suma completa de renta que es $' + ISNULL(convert(varchar(16),REVIEW58VOUCH.dCR12p,0),'0.00') + ' por mes.' END 'InUnitTextS'
             , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '^' ELSE CASE WHEN Tenant_Landlord.Tenant_Landlord= 1 THEN ' ^The above listed tenant was sent a copy of this letter.^ ' ELSE ' ^The above listed Landlord was sent a copy of this letter.^ ' END END 'LLCopy'
             , CASE WHEN Tenant.sUnitCode = 'PENDING' THEN '^' ELSE CASE WHEN Tenant_Landlord.Tenant_Landlord= 1 THEN ' ^Al inquilino nombrado arriba se le envió una copia de esta carta.^ ' ELSE ' ^Al propietario nombrado arriba se le envió una copia de esta carta.^ ' END END 'LLCopyS'
 FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)

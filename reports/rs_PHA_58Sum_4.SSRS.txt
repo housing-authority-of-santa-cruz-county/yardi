@@ -1,0 +1,826 @@
+//vista
+
+//Notes
+Copyright (c) 2001 by Yardi Systems
+	NAME
+		rs_PHA_58Sum_4.SSRS.txt
+	DESCRIPTION
+	NOTES
+	MODIFIED
+      03/14/2008 - TR#113265 - VaishaliS - Removed the join on H8FSS table and all the fields from that table
+      01/27/2009 - TR#133956 - VaishaliS - Modified Case Statement in Person (For Owner O) Join.
+      03/11/2010 -             Ray E     - Added fields to show prorated values on Calc Summary on FDI when effective date is other than the 1st of the month.
+      02/05/2011 (JNJ)   TR234204 Implement PBV Payment Standard as an option (Hotfix 6423)
+      12/22/2011	-	TR#210690, TR#256590 - Prasad D. - Changes made in crystal (Family Members Subreport). If DOB is null then hidden the Age.
+      04/04/2012 - TR#264246 - VaishaliS - Changed dAdjFactor field from ISNULL(rh.dRentAdjFactor,0) to
+                                            CASE IsNumeric(rh.dRentAdjFactor) WHEN 1 THEN Convert(Numeric, rh.dRentAdjFactor) ELSE 0 END
+                                            to address the issue it is causing while adding it to crystal side
+      07/16/2013 - TR#308672 - Manojku -  Merged Portland hotfix changes from Crystal to SSRS.
+      07/29/2013 - TR#310060 - Manojku -  Added education and employment deductions columns.
+      07/30/2013 - TR#310243 - ManojKu - Added iMinRentRentPremium columns in select.
+      08/26/2013 - TR#312498 - Manojku - Modifications for performance improvement.
+      																		 Moved the complex calculations and visibility conditions from rdlc to script and added Order by clause.
+      																		 Added dummy dataset for sub-report visibility.
+      10/18/2013 - TR#314029 - Manojku - Modifications for SSRS report performance improvement - Moved the some complex calculations from rdlc to script and changed Order by clause.
+       06/05/2014 - TR#340820 - VaishaliS - Removed F.sRace from Family Member subreport so that report will consider calculated sRace field.
+            																		 Moved the some complex calculations from rdlc to script and changed Order by clause.
+      06/28/2014 - TR#341625 - FaizaanS - Pulled the State from ADDR instead of H8Summ for Unit Address
+      01/07/2015 - TR#359156 - NikhilS - Added CPR#21067, TTP Baseline.
+      01/07/2015 - TR#362179 - VaishaliS. - Added fields related to MTW Flat Subsidy Based on Payment Standard.
+      07/07/2015 - TR#371272 - VaishaliS. - Added fields related to Homeownership Minimum Tenant Rent & Mixed Family Flat Fee
+      07/22/2015 (JNJ) TR353035 Change reference from vh8_HardshipAdjType to MTWRentHardshipParam
+      25/07/2015 - TR#383832 - ChetanAh - Made changes to display Earned Income Standard deduction and Non-Earned Income Standard Deduction for CPR#22011.
+      08/13/2015 - TR#371213 - Manjirees - Added fields for RAD
+      11/20/2015 - TR#395157, CPR #23727  - ChetanAh - MTW CPR: Rent Burden Estimation Changes
+      12/08/2015 - TR#395624 - KishorKh - PII field(SSN,AlienReg) removed,removed Mask SSN fiter and added Mask DOB fitler.
+      12/09/2015 - TR#395157 - ChetanAh - Resolved Defect#55432, Modified the condition to pull the PercentOfAMI value.
+      12/21/2015 - TR#378567 - ManjireeS - Report changes to reflect TTP and allowances, as well as 40% of adjusted income amount for ation type 10-Issue
+      04/20/2016 - TR399482 - KetakiS - Done Changes to include JPEID related fields
+      07/13/2016 - TR#380081 - SagarM - Added Shared Housing related Fields
+      08/01/2016 - TR#421281 - KishorKh - Modified script file to handle null values for special program pointer(hStpr) in H8SUMM table.
+      09/21/2016 - TR#380081, Defect#67130 - SagarM - changed the wording from 'Shared Housing Pro-rata' to 'Housing Proration Percentage' and fixed the percentage calculation related issue.
+      10/18/2016 - TR#380081, Defect#67788 - SagarM - Added all bedroomsizes (Unit, Voucher and Total bedrooms of unit). This will be used in case of shared housing
+      09/19/2017 (JNJ) TR-465744 Revise for PBV RAD phase-in and zero HAP changes
+      11/08/2017 (JNJ) TR-470047 Correct "Actual % AMI" (dActAMIPercent) should be based on family share (rent + utilities, or gross rent - total HAP), not tenant rent.
+      03/08/2018 (SagarM) TR#480258 Merged HOTMA-related Calc Summary Changes (TR#468376)
+      08/29/2018 (SagarM) TR#497027 Done changes to improve performance of script (SQL part)
+//End Notes
+
+//Exclude
+
+//Database
+SSRS "rx_PHA_58Sum.rdlc"
+//End Database
+
+//Crystal
+cryactive Y
+param SortOrd="Tenant Name"
+//end crystal
+
+
+//Title
+Calculation Summary (FDI)
+//end title
+
+//Select No Crystal
+SELECT S.* INTO #H8SummTEMP
+FROM H8Summ S LEFT JOIN TENANT T ON S.hTenant =  T.hMyPerson
+WHERE 1=1
+#CONDITIONS#
+
+SELECT P.* INTO #H8PublicTEMP
+FROM H8Public P
+INNER JOIN #H8SummTEMP S ON S.hMy = P.hSum
+
+SELECT C.* INTO #H8CertifTEMP
+FROM H8Certif C
+INNER JOIN #H8SummTEMP S ON S.hMy = C.hSum
+
+SELECT V.* INTO #H8VouchTEMP
+FROM H8Vouch V
+INNER JOIN #H8SummTEMP S ON S.hMy = V.hSum
+
+SELECT M.* INTO #H8ModRehTEMP
+FROM H8ModReh M
+INNER JOIN #H8SummTEMP S ON S.hMy = M.hSum
+
+SELECT H.* INTO #H8HomeOwnershipTEMP
+FROM H8HomeOwnership H
+INNER JOIN #H8SummTEMP S ON S.hMy = H.hSum
+
+//END NO CRYSTAL
+
+//Select
+DECLARE @Security INT
+SET @Security = (select svalue from paramopt2 where stype = 'ENABLEDATAENCRYPTION')
+
+Select S.*
+
+	/**************************Fields for show/hide formulas*****************************/
+	,Convert(Bit, S.bPHCalcSec12Hide) bPHCalcSec12HideFinal
+	,Convert(Bit, S.bVouCalcSec3Hide) bVouCalcSec3HideFinal
+	,CASE WHEN hRRTen = 0 THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END hRRTenHide
+
+
+	, CASE WHEN ISNULL(S.hTieredTTPSchedule, 0) <> 0 THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END hTieredTTPScheduleHide
+	, CASE WHEN ISNULL(S.hTieredTTPSchedule, 0) = 0 THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END hTieredTTPScheduleShow
+	, CASE WHEN ISNULL(S.bTTPBaseline, 0) = -1 THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END bTTPBaselineShow
+	, CASE WHEN S.bMTWEnablePSBasedFlatSubsidy = -1 And S.dMTWPSPctFlatSubsidyCal > 0 THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END MTWPSPctFlatSubsidyHide
+	, CASE WHEN	S.bMTWEnablePSBasedFlatSubsidy = -1 And S.dMTWPSPctFlatSubsidyCal > 0 THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END MTWPSPctFlatSubsidyShow
+	, CASE WHEN S.dGR12q <= dVoPayStd12j THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END VoPayStd12jHide
+	, CASE WHEN	S.hRentAdj = 0 THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END hRentAdjHide
+	, CASE WHEN	sRentType = 'I' THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END sRentTypeHide
+	, CASE WHEN	S.dCR12p <= S.dVoPayStd12j THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END VodCR12pHide
+	, CASE WHEN	S.ProURP =0 THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END ProURPHide
+	, CASE WHEN	S.ReportType ='Master' THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END MasterHide
+	//, CASE WHEN	S.b40PerWarning =0          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END b40PerWarningHide
+  , Convert(Bit, 1) b40PerWarningHide
+	, Convert(Bit, S.bEliminateURSec1Hide) bEliminateURSec1HideFinal
+	, Convert(Bit, S.bEliminateURSec2Hide) bEliminateURSec2HideFinal
+	, Convert(Bit, S.bEliminateURSec3Hide) bEliminateURSec3HideFinal
+	, Convert(Bit, S.bFixedIRAdjHide) bFixedIRAdjHideFinal
+	, CASE WHEN S.bMixedFamFlatFeePerMember = 0	          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END bMixedFamFlatFeePerMemberHide
+	, Convert(Bit, S.bOwnerLetter2Hide) bOwnerLetter2HideFinal
+	, Convert(Bit, S.bOwnerLetterHide) bOwnerLetterHideFinal
+	, Convert(Bit, S.bPHCalcSec1Hide) bPHCalcSec1HideFinal
+	, Convert(Bit, S.bPHCalcSec21Hide) bPHCalcSec21HideFinal
+	, Convert(Bit, S.bPHCalcSec22Hide) bPHCalcSec22HideFinal
+	, Convert(Bit, S.bPHCalcSec2Hide) bPHCalcSec2HideFinal
+	, Convert(Bit, S.bPHEliminateURHide) bPHEliminateURHideFinal
+	, Convert(Bit, S.bProratedHAPHide) bProratedHAPHideFinal
+	, Convert(Bit, S.bTieredTTPSec1Hide) bTieredTTPSec1HideFinal
+	, Convert(Bit, S.bTieredTTPSec2Hide) bTieredTTPSec2HideFinal
+	, Convert(Bit, S.bVouCalcSec1Hide) bVouCalcSec1HideFinal
+	, Convert(Bit, S.bVouCalcSec2Hide) bVouCalcSec2HideFinal
+	, Convert(Bit, S.bWorkReqSecHide) bWorkReqSecHideFinal
+	, CASE WHEN	S.dFSSStrikepoint = 0          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END dFSSStrikepointHide
+	, CASE WHEN	S.IsJPEIDParticipant='No'          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END IsJPEIDParticipantHide
+	, CASE WHEN	S.IsSharedHousing = 0          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END IsSharedHousingHide
+	, CASE WHEN	S.ReportType <> 'Master'          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END MasterShow
+	, CASE WHEN	S.sProgram1d = 'P'          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END PProgramHide
+	, CASE WHEN	(S.sProgram1d = 'CE' OR S.sProgram1d = 'PV')
+							AND S.bPBVProgramPmtStd = 0 AND S.iTotElig11ae < S.iTotFam11af          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PBVPMTProrateHide
+	, CASE WHEN	(S.sProgram1d = 'CE' OR S.sProgram1d = 'PV') AND S.bPBVProgramPmtStd = 0          THEN Convert(Bit, 0) ELSE Convert(Bit, 01) END PBVProgramStdHide
+	, CASE WHEN	(S.sProgram1d = 'CE' OR S.sProgram1d = 'PV') AND S.bPBVProgramPmtStd = -1
+							AND S.iTotElig11ae < S.iTotFam11af           THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PBVPMTProrateShow
+	, CASE WHEN	S.bMTWProgram =-1 and S.dEducDeduct <> 0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END MTWProgramEduDeductHide
+	, CASE WHEN	S.bMTWProgram =-1 and S.dEmplDeduct <> 0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END MTWProgramEmpDeductHide
+	, CASE WHEN	S.bMTWProgram =-1 and S.dNonEarnedIncDeduct <> 0 OR S.dEarnedIncDeduct <> 0 THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END MTWIncDeductShow
+	, CASE WHEN	S.bMTWProgram =-1 THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END MTWProgramShow
+	, CASE WHEN	S.bShowOMHLS = -1 THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END OMHLSShow
+	, CASE WHEN	S.sProgram1d = 'MR'          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END MRProgramShow
+	, CASE WHEN	S.sProgram1d = 'H' and S.hiTotElig15ab < S.hiTotFam15ac and S.bMixedFamFlatFee<>0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END ProratedHOShow
+	, CASE WHEN	S.sProgram1d = 'H' and S.hiTotElig15ab < S.hiTotFam15ac and S.hTieredSubsidySchedule=0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END ProratedHONonTieredShow
+	, CASE WHEN	S.sProgram1d='H' and S.hTieredSubsidySchedule>0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END HOTieredShow
+	, CASE WHEN	S.sProgram1d='H' and S.hTieredSubsidySchedule=0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END HOTieredHide
+	, CASE WHEN	ISNULL(S.dExclAssetMTW, 0) = 0          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END ExclAssetMTWHide
+	, CASE WHEN	(S.sProgram1d = 'CE' Or S.sProgram1d = 'PV') And S.bPBVProgramPmtStd = -1          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PBVProgramStdShow
+	, CASE WHEN	S.sProgram1d = 'PV' And S.iTotElig11ae < S.iTotFam11af And S.bMTWProgram = 0
+							And (S.CE_RADPhaseInTTPAdjustment <> 0 Or S.dRADPHZeroHAPRentAdj <> 0)          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PBVProratedRADShow
+	, CASE WHEN	S.sProgram1d = 'PV' And S.iTotElig11ae = S.iTotFam11af And S.bMTWProgram = 0
+							And (S.CE_RADPhaseInTTPAdjustment <> 0 Or S.dRADPHZeroHAPRentAdj <> 0)          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PBVRADShow
+	, CASE WHEN	S.sProgram1d= 'VO' AND S.iTermLimitMonths > 0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END VOTermLimitShow
+	, CASE WHEN	 S.sProgram1d = 'P' AND (S.SiTotElig10j < S.SiTotFam10k)
+							AND (S.bMinRentIsRentFloor <> 0  OR S.bMixedFamFlatFee <> 0)          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PublicMixedFlatFeeShow
+	, CASE WHEN S.dAdjAmount<0 AND S.sSource='PH Noncompliance'	          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PHNonComplianceShow
+	, CASE WHEN	S.sProgram1d <> 'MR'  OR S.iTotElig13r = S.iTotFam13s          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END NonMRFamilyHide
+	, CASE WHEN	S.sProgram1d <> 'P'  OR S.FirstDay <= 1          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END PHFirstDayShow
+	, CASE WHEN	S.sProgram1d = 'P' AND S.dAdjAmount <> 0          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PHAdjAmountShow
+	, CASE WHEN	S.sProgram1d = 'P' OR S.FirstDay<=1          THEN Convert(Bit, 1) ELSE Convert(Bit, 0) END PHFirstDayHide
+	, CASE WHEN	(S.sProgram1d = 'PV' Or S.sProgram1d = 'CE')
+							And S.bMTWProgram = -1
+							And (S.dRADPhaseInRentAdj <> 0
+										Or S.dRADPHZeroHAPRentAdj <> 0
+										Or S.CE_dRentAdjustment <> 0
+										Or S.EliminateURP = -1
+										Or S.CE_dMTWTRUnadj < S.CE_dMTWHAPMinResp )          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END PBVRADPhaseInShow
+	, CASE WHEN	(S.dAdjAmount < 0 And S.sSource = 'Rent Hardship')
+							Or ( IsNull(S.sAdjType, '') = 'Rent Override (Increase or Decrease)'
+							And S.dAdjAmount > 0 And S.sSource = 'Rent Hardship')          THEN Convert(Bit, 0) ELSE Convert(Bit, 1) END RentHardshipShow
+FROM
+
+(
+SELECT
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN 'Master' ELSE '50058' END ReportType,
+  S.HMy HMY, S.hTenant hTenant, S.sHeadName3b sHeadName3b,
+  S.dtMod1 dtMod1, S.sAgencyName1a sAgencyName1a, S.sHAState1b sHAState1b, S.sHANum1c sHANum1c, S.sProgram1d sProgram1d,
+  S.sProjNum sProjNum, S.sProjectState1e sProjectState1e, S.sProjectOrigHANum1f sProjectOrigHANum1f, S.sProjectNum1g sProjectNum1g,
+  S.sSiteNum1h sSiteNum1h, S.sBldgNum sBldgNum, S.sBldgEnterNum sBldgEnterNum, S.sActionType2a sActionType2a, S.dtEffective2b dtEffective2b,
+  S.sUnitNum sUnitNum, S.sCorr sCorr, S.sCorrCode sCorrCode, S.dtCorrTransmit dtCorrTransmit, S.sRepay sRepay, S.dMonthlyRepay dMonthlyRepay,
+  S.dtAdmit2c dtAdmit2c, S.dtNextEffective2d dtNextEffective2d, S.dtNextEffectiveFlat dtNextEffectiveFlat, S.sSpecialProgram sSpecialProgram,
+  S.sFSS2e sFSS2e, S.sOther1Prog sOther1Prog, S.sOther2Prog sOther2Prog, S.sOther3Prog sOther3Prog, S.sOther4Prog sOther4Prog,
+  S.sOther5Prog sOther5Prog, S.sUseHUD2f sUseHUD2f, S.sPHA1Use sPHA1Use, S.sPHA2Use sPHA2Use, S.sPHA3Use sPHA3Use, S.sPHA4Use sPHA4Use,
+  S.sPHA5Use sPHA5Use, S.sNCStatus3s sNCStatus3s, S.dtEffectiveNC3t dtEffectiveNC3t, S.sReserved_3r sReserved_3r, S.iTotMem3r iTotMem3r,
+  S.dtWaitListed4a dtWaitListed4a, S.sZip4b sZip4b, S.sHomeless4c sHomeless4c, S.sQualOverLim4d sQualOverLim4d,
+  S.sContAssist sContAssist, S.sDisregard sDisregard,
+  rtrim(E.sFirstName) + ' ' + rtrim(E.uLastName) Caseworker,
+
+  T.sCode tscode, T.sLASTNAME LNameT, T.sFIRSTNAME FNameT,
+  T.SADDR1 SADDR1, T.SADDR2 SADDR2, T.SCITY SCITY, T.SSTATE SSTATE, T.SZIPCODE SZIPCODE,
+  CASE t.istatus
+  	WHEN 0 THEN 'Current'
+	WHEN 1 THEN 'Past'
+	WHEN 2 THEN 'Future'
+	WHEN 3 THEN 'Eviction'
+	WHEN 4 THEN 'Notice'
+	WHEN 6 THEN 'Applicant'
+	WHEN 7 THEN 'Canceled'
+	WHEN 8 THEN 'WaitList'
+	WHEN 9 THEN 'Denied'
+	ELSE 'Vacant'
+	END Status,
+  S.iBedroomsInUnit IBEDROOMS,
+  T.SPHONENUM1 SPHONENUM1, T.DTMOVEIN,
+  A.sADDR1 AddressP1, A.sADDR2 AddressP2, A.sCITY CityP, A.sSTATE StateP, A.sZIPCODE ZipP,
+
+  O.uCode OuCode, O.uLASTNAME OwnLName, O.sFIRSTNAME OwnFName,
+  O.sADDR1 OAdd1, O.sADDR2 OAdd2, O.sCITY OCity,
+  O.sSTATE OState, O.sZIPCODE OZip, O.sPHONENUM0 OPhone, case @Security when -1 then dbo.DB_DataDecrypt(O.sFedIDSecure) else O.sFedID END OTaxIDNum,
+
+  OL.uCode OLuCode, OL.uLASTNAME OLOwnLName, OL.sFIRSTNAME OLOwnFName,
+  OL.sADDR1 OLOAdd1, OL.sADDR2 OLOAdd2, OL.sCITY OLOCity,
+  OL.sSTATE OLOState, OL.sZIPCODE OLOZip, OL.sPHONENUM0 OLOPhone, case @Security when -1 then dbo.DB_DataDecrypt(OL.sFedIDSecure) else OL.sFedID END OLTaxIDNum,
+
+  S.sSameAddr sSameAddr, S.sAccUnit5d sAccUnit5d, S.sAccReq5e sAccReq5e, S.sAccRecdFull5fa sAccRecdFull5fa, S.sAccRecdPart5fb sAccRecdPart5fb,
+  S.sAccRecdNo5fc sAccRecdNo5fc, S.sAccPend5fd sAccPend5fd, S.sAccRecd5f sAccRecd5f, S.dtUnitPass5g dtUnitPass5g, S.dtUnitInsp5h dtUnitInsp5h,
+  S.dtUnitBuilt dtUnitBuilt, S.sStructure sStructure, S.dTotAsset6f dTotAsset6f, S.dTotAntAssetInc6g dTotAntAssetInc6g, S.dPassBkRate6h dPassBkRate6h,
+  S.dImputedInc6i dImputedInc6i, S.dTotAssetInc6j dTotAssetInc6j, S.dTot7h dTot7h, S.dTot7i dTot7i,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTot7j ELSE S.dTot7j END dTot7j,
+  S.dReserved7k dReserved7k,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTotAnnInc7m ELSE S.dTotAnnInc7m END dTotAnnInc7m,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dMedThreshold8c ELSE S.dMedThreshold8c END dMedThreshold8c, S.dTotUnreimDAE8d dTotUnreimDAE8d, S.dMaxDisabAllow8d11 dMaxDisabAllow8d11,
+  S.dMaxDisabAllow8d12 dMaxDisabAllow8d12, S.dMaxDisabAllow8d13 dMaxDisabAllow8d13, S.dEarn7dPossDAE8e dEarn7dPossDAE8e,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dAllowableDAE8f ELSE S.dAllowableDAE8f END dAllowableDAE8f,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTotMedExp8g ELSE S.dTotMedExp8g END dTotMedExp8g,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTotMedAndDAE8h ELSE S.dTotMedAndDAE8h END dTotMedAndDAE8h,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dAllowMedDAE8i ELSE S.dAllowMedDAE8i END dAllowMedDAE8i,
+  S.dAllowMedDAE8i1 dAllowMedDAE8i1, S.dAllowMedDAE8i2 dAllowMedDAE8i2,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dAllowElder8j ELSE S.dAllowElder8j END dAllowElder8j,
+  CASE s.sActionType2a WHEN 'A' THEN SH.iNumDep8k ELSE S.iNumDep8k END iNumDep8k,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dAllowPerDep8m ELSE S.dAllowPerDep8m END dAllowPerDep8m,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTotDepAllow8n ELSE S.dTotDepAllow8n END dTotDepAllow8n,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dChildCareUnimb8p ELSE S.dChildCareUnimb8p END dChildCareUnimb8p,
+  S.dTravelCost8q dTravelCost8q, S.dOptionEID8r dOptionEID8r, S.dReserved8t dReserved8t,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTotAllow8u ELSE S.dTotAllow8u END dTotAllow8u,
+  S.dAdjAnnInc8v dAdjAnnInc8v, S.dReserved_8w dReserved_8w,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTotMonthlyInc9a ELSE S.dTotMonthlyInc9a END dTotMonthlyInc9a, S.dReserved9b dReserved9b,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTTPAnn9c ELSE S.dTTPAnn9c END dTTPAnn9c,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dAdjMonthlyInc9d ELSE S.dAdjMonthlyInc9d END dAdjMonthlyInc9d,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dReserved9e ELSE S.dReserved9e END dReserved9e,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTTPAdj9f ELSE S.dTTPAdj9f END dTTPAdj9f,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dWelfareRent9g ELSE S.dWelfareRent9g END dWelfareRent9g,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dTTPMin9h ELSE S.dTTPMin9h END dTTPMin9h, S.dReserved9i dReserved9i,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dEVMinRent ELSE S.dEVMinRent END dEVMinRent,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dtTphi9j ELSE S.dtTphi9j END dtTphi9j,
+  S.dTTPRecent9k dTTPRecent9k, S.sRentExempt sRentExempt, S.iTotElig10j SiTotElig10j, S.iTotFam10k SiTotFam10k,  S.sAccessRecd sAccessRecd,
+  S.dExclAssetMTW, IsNull(S.dLastTTPRAD, 0) dLastTTPRAD, IsNull(S.dRADProratedTTPIncrease, 0) dRADProratedTTPIncrease, S.dEducDeduct, S.dEmplDeduct,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dEarnedIncDeduct ELSE S.dEarnedIncDeduct END dEarnedIncDeduct,
+  CASE s.sActionType2a WHEN 'A' THEN SH.dNonEarnedIncDeduct ELSE S.dNonEarnedIncDeduct END dNonEarnedIncDeduct, ISNULL(S.dTTPTieredLookup, S.dTTPHi9j) dTTPTieredLookup,
+
+  P.hSum PHSUM,
+  P.dTTP10a dTTP10a, P.dFlatRent dFlatRent, P.dCeilingRent10b dCeilingRent10b, P.dLowerRent10c dLowerRent10c, P.dUA10d dUA10d, P.dTR10e dTR10e, P.dUR10e dUR10e,
+  P.dReserved10f dReserved10f, P.dReserved10g dReserved10g, P.dMaxRent10h dMaxRent10h, P.dMaxSubsidy10i dMaxSubsidy10i, P.iTotElig10j PiTotElig10j, P.iTotFam10k PiTotFam10k,
+  P.dReserved10m dReserved10m, P.dEligSubsidy10n dEligSubsidy10n, P.dMixedTTP10p dMixedTTP10p, P.dReserved10q dReserved10q, P.dUA10r dUA10r, P.dMixedTR10s dMixedTR10s,
+  P.dMixedUR10s dMixedUR10s, P.dReserved10t dReserved10t, P.sRentType sRentType, P.dReserved10u dReserved10u,
+  P.dMixedFamFlatFee dMixedFamFlatFee_P, P.dMinTenRent dMinTenRent_P, P.dTR10EHUD, P.dMixedTR10SHUD, P.dRentAdjustment dRentAdj_P, P.ddefaultFR,
+
+  C.hSum CHSUM,
+  C.iBedroom11a iBedroom11a, C.sNowMoving11b sNowMoving11b, C.sHardToHouse11c sHardToHouse11c, C.sPortIn11d sPortIn11d, C.dCostBilled11e dCostBilled11e, C.sHABilled11f sHABilled11f,
+  C.sOFTO11g1 sOFTO11g1,C.sProjectUnit11g2 sProjectUnit11g2, C.sModRehabFund11g3 sModRehabFund11g3, C.sIGR11g4 sIGR11g4, C.sSRO11g5 sSRO11g5, C.sOwnName11h sOwnName11h,
+  C.dFMRRent11j dFMRRent11j, C.dCR11k dCR11k, C.dUA11m dUA11m, C.dGR11n dGR11n, C.dReserved11p dReserved11p,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.DTTP11QRAD ELSE C.dTTP11q END dTTP11q,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dTTP11q ELSE 0 END dTTP11qRAD,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dTotHAP11rRAD ELSE C.dTotHAP11r END dTotHAP11r,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dTotHAP11r ELSE 0 END dTotHAP11rRAD,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND (IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) OR IsNull(C.dRADPHZeroHAPRentAdj, 0) <> 0) THEN C.dTR11sRAD ELSE C.dTR11s END dTR11s,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND (IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) OR IsNull(C.dRADPHZeroHAPRentAdj, 0) <> 0) THEN C.dTR11s ELSE 0 END dTR11sRAD,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dUR11sRAD ELSE C.dUR11s END dUR11s,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dUR11s ELSE 0 END dUR11sRAD,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dOwnHAP11tRAD ELSE C.dOwnHAP11t END dOwnHAP11t,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = -1 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dOwnHAP11t ELSE 0 END dOwnHAP11tRAD,
+  C.dNormalHAP11aa dNormalHAP11aa, C.dReserved11ab dReserved11ab, C.dReserved11ac dReserved11ac, C.dReserved11ad dReserved11ad, C.iTotElig11ae iTotElig11ae, C.iTotFam11af iTotFam11af, C.dProPercent11ag dProPercent11ag,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dProHAP11ahRAD ELSE C.dProHAP11ah END dProHAP11ah,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dProHAP11ah ELSE 0 END dProHAP11ahRAD,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dMixedTTP11aiRAD ELSE C.dMixedTTP11ai END dMixedTTP11ai,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dMixedTTP11ai ELSE 0 END dMixedTTP11aiRAD,
+  C.dUA11aj dUA11aj,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND (IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) OR IsNull(C.dRADPHZeroHAPRentAdj, 0) <> 0) THEN C.dMixedTR11akRAD ELSE C.dMixedTR11ak END dMixedTR11ak,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND (IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) OR IsNull(C.dRADPHZeroHAPRentAdj, 0) <> 0) THEN C.dMixedTR11ak ELSE 0 END dMixedTR11akRAD,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dMixedUR11akRAD ELSE C.dMixedUR11ak END dMixedUR11ak,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dMixedUR11ak ELSE 0 END dMixedUR11akRAD,
+  C.dReserved11am dReserved11am,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dOwnProHAP11anRAD ELSE C.dOwnProHAP11an END dOwnProHAP11an,
+  CASE WHEN IsNull(H8S.bMTWProgram, 0) = 0 And c.bFullSubsidy = 0 AND substring(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) <> IsNull(C.dRADPhaseInUnadjustedTTP, 0) THEN C.dOwnProHAP11an ELSE 0 END dOwnProHAP11anRAD,
+  C.sReserved_11c sReserved_11c, C.dReserved_11j dReserved_11j, ISNULL(H8S.bPBVProgramPmtStd,0) bPBVProgramPmtStd, C.dPaymentStandard, C.dLowerPmtStdGrossRent, C.dFamilyShare,
+  C.dMixedFamFlatFee dMixedFamFlatFee_CE, C.dRADPhaseInRentAdj dRADPhaseInRentAdj, IsNull(C.dRADPHZeroHAPRentAdj, 0) dRADPHZeroHAPRentAdj,
+  CASE WHEN C.bFullSubsidy = -1 THEN CASE WHEN C.dTRPreMinTenRent > 0 THEN C.dTRPreMinTenRent ELSE 0 END ELSE CASE WHEN C.dMixTRPreMinTenRent > 0 THEN C.dMixTRPreMinTenRent ELSE 0 END END CE_dMTWTRUnadj,
+  CASE WHEN C.bFullSubsidy = -1 THEN CASE WHEN C.dTRPreMinTenRent < 0 THEN -C.dTRPreMinTenRent ELSE 0 END ELSE CASE WHEN C.dMixTRPreMinTenRent < 0 THEN -C.dMixTRPreMinTenRent ELSE 0 END END CE_dMTWURUnadj,
+  CASE WHEN C.bFullSubsidy = -1 THEN C.dHAPPreMinTenRent ELSE C.dMixHAPPreMinTenRent END CE_dMTWHAPUnadj,
+  CASE WHEN C.bFullSubsidy = -1 THEN C.dMinTenResponsibility ELSE C.dMixMinTenResponsibility END CE_dMTWHAPMinResp, C.dRentAdjustment CE_dRentAdjustment,
+  IsNull(C.dRADPhaseInUnadjustedTTP, 0) dRADPhaseInUnadjustedTTP, IsNull(C.dRADPhaseInTTP, 0) dRADPhaseInTTP, C.dTR11sHUD, C.dUR11sHUD, C.dOwnHAP11tHUD, C.dMixedTR11akHUD, C.dMixedUR11akHUD, C.dOwnProHAP11anHUD,
+  CASE WHEN UPPER(substring(S.sother1prog,1,3)) = 'RAD' and S.sProgram1d = 'PV' And (IsNull(c.dRADPhaseInRentAdj, 0) <> 0 Or IsNull(c.dRADPHZeroHAPRentAdj, 0) <> 0)  THEN 1 ELSE 0 END bIsRAD,
+  CASE WHEN SUBSTRING(s.sOther1Prog, 1, 3) = 'RAD' AND IsNull(radq.sQualificationStatus, '') = 'Qualified' AND IsNull(c.dRADPhaseInTTP, 0) > 0 THEN IsNull(c.dRADPhaseInTTP, 0) - IsNull(c.dRADPhaseInUnadjustedTTP, 0) ELSE 0 END CE_RADPhaseInTTPAdjustment,
+
+  V.hSum VHSUM,
+  V.iBedroom12a iBedroom12a, V.sNowMoving12b sNowMoving12b, V.sHardToHouse12c sHardToHouse12c, V.sPortIn12d sPortIn12d, V.dCostBilled12e dCostBilled12e, V.sHABilled12f sHABilled12f,  V.sLeaseSpace sLeaseSpace,
+  V.sSRO12g1 sSRO12g1, V.sIGR12g2 sIGR12g2, V.sOwnName12h sOwnName12h,V.dVoPayStd12j dVoPayStd12j, V.dTTPAdj12k dTTPAdj12k, V.dMaxSubsidy12m dMaxSubsidy12m, V.dUA12n dUA12n, V.dCR12p dCR12p,
+  V.dGR12q dGR12q, V.dGRLessSub12r dGRLessSub12r, V.dMinContrib12s dMinContrib12s, V.dTotContrib12t dTotContrib12t, V.dGRLessContrib12u dGRLessContrib12u, V.dTotVOSubsidy12v dTotVOSubsidy12v, V.dOwnHAP12w dOwnHAP12w,
+  V.dUR12y dUR12y, V.dFamRent12x dFamRent12x, V.dAltHAP12aa dAltHAP12aa, V.dNormalHAP12ab dNormalHAP12ab, V.iTotElig12ac iTotElig12ac, V.iTotFam12ad iTotFam12ad, V.dProPercent12ae dProPercent12ae, V.dProHAP12af dProHAP12af,
+  V.dMixedContrib12ag dMixedContrib12ag, V.dUA12ah dUA12ah, V.dMixedTR12ai dMixedTR12ai, V.dMixedUR12ai dMixedUR12ai, V.dReserved12aj dReserved12aj, V.dOwnProHAP12ak dOwnProHAP12ak, V.hHABilled12f hHABilled12f,
+  V.dReserved_12n dReserved_12n, V.dReserved_12aa dReserved_12aa, V.dLower dLower,ISNULL(V.dHAP,0) TotHAP,
+  V.dMixedFamFlatFee dMixedFamFlatFee_V, V.dMinTenRent dMinTenRent_V, V.dFamRent12XHUD, V.dMixedTR12AIHUD, V.dRentAdjustment dRentAdj_V,
+  ISNULL(V.bIsSharedHousing, 0) IsSharedHousing,
+  CASE WHEN ISNULL(V.iSharedHousingBedrooms, 0) > 0 THEN
+  ISNULL(U.IBEDROOMS, 0) / ISNULL(V.iSharedHousingBedrooms, 0)
+  ELSE 0 END SharedHosungProRata,
+  ISNULL(U.IBEDROOMS, 0) UnitBedRooms,
+  ISNULL(V.iSharedHousingBedrooms, 0) SharedHousingTotalBedrooms,
+
+  M.hSum MHSUM,
+  M.sHAPContract13a sHAPContract13a, M.sSROProgram13b sSROProgram13b, M.sSROUnit13c sSROUnit13c, M.sOwnName13d sOwnName13d, M.dBaseRent13f dBaseRent13f, M.dDebtService13g dDebtService13g,
+  M.dCR13h dCR13h, M.dUA13i dUA13i, M.dTTP13j dTTP13j, M.dTR13k dTR13k, M.dUR13k dUR13k, M.dOwnHAP13m dOwnHAP13m, M.dReserved13n dReserved13n, M.dGR13p dGR13p, M.dNormalHAP13q dNormalHAP13q, M.iTotElig13r iTotElig13r,
+  M.iTotFam13s iTotFam13s, M.dProPercent13t dProPercent13t, M.dProHAP13u dProHAP13u, M.dMixedTTP13v dMixedTTP13v, M.dUA13w dUA13w, M.dMixedTR13x dMixedTR13x, M.dMixedUR13x dMixedUR13x, M.dReserved13y dReserved13y,
+  M.dOwnProHAP13z dOwnProHAP13z,
+
+  H.hSum HHSUM,
+  H.sNowMoving15a hsNowMoving15a, H.dPITIMIP15f hdPITIMIP15f, H.dUA15g hdUA15g, H.dMA15h hdMA15h, H.dMRRA15i hdMRRA15i, H.dCoop15j hdCoop15j, H.dPIonDebt15k hdPIonDebt15k,
+  H.dGrossExpense15m hdGrossExpense15m, H.dVoPayStd15n hdVoPayStd15n, H.dLower15p hdLower15p, H.dTTP15q hdTTP15q, H.dHAP15r hdHAP15r, H.dTS15s hdTS15s, H.ibedroom hibedroom,
+  H.dNormalHAP15aa hdNormalHAP15aa, H.iTotElig15ab hiTotElig15ab, H.iTotFam15ac hiTotFam15ac,
+  H.dProPercent15ad hdProPercent15ad, H.dProHAP15ae hdProHAP15ae, H.dMixedTS15af hdMixedTS15af,
+
+  H.dMixedFamFlatFee HdMixedFamFlatFee, H.dTieredSubsidy HdTieredSubsidy, H.dMinTenRent HdMinTenRent,
+  H.dFSPreMinTenRent HdFSPreMinTenRent, H.dHAPPreMinTenRent HdHAPPreMinTenRent,
+  H.dMixFSPreMinTenRent HdMixFSPreMinTenRent, H.dMixHAPPreMinTenRent HdMixHAPPreMinTenRent,
+  H.dMinTenResponsibility HdMinTenResponsibility, H.dMixMinTenResponsibility HdMixMinTenResponsibility,
+
+  CASE WHEN S.hstpr is NULL THEN
+        CASE WHEN isnull(PHA.dAdjIncPercent, 0) = 0 THEN 40 ELSE PHA.dAdjIncPercent END
+  ELSE CASE WHEN isnull(H8S.dAdjIncPercent, 0) = 0 THEN 40 ELSE H8S.dAdjIncPercent END END AdjIncPct,
+  ISNULL(h8s.bMinRentIsRentFloor,0) bMinRentIsRentFloor, H8s.sPCode, ISNULL(h8s.bMixedFamFlatFee,0) bMixedFamFlatFee,
+  ISNULL(h8s.iMinRentRentPremium,0) iMinRentRentPremium,
+  S.dtEffective2b dtStartDay,
+  dbo.fh8_PRH_GetEndOfMonth(S.dtEffective2b)  dtEndDay,
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN datepart(d,S.dtEffective2b) ELSE -1 END FirstDay,
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN dbo.fH8_GetProratedAmt(S.hMy, 'TRC') ELSE 0 END ProTRC,
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN dbo.fH8_GetProratedAmt(S.hMy, 'HAP') ELSE 0 END ProHAP,
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN dbo.fH8_GetProratedAmt(S.hMy, 'URP') ELSE 0 END ProURP,
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN dbo.fH8_GetProratedAmt(S.hMy, 'FSS') ELSE 0 END ProFSS,
+  CASE WHEN IsNull(s.bMasterRecd, 0) = -1 THEN dbo.fH8_GetProratedAmt(S.hMy, 'RTO') ELSE 0 END ProRTO,
+
+  ISNULL(RA.dAdjAmount,0) dAdjAmount, ISNULL(ra.hMy,0) hRentAdj, ra.iSource, ra.dtEffective dtRAEffective,
+  ISNULL(ra.dUnadjTenantRent,0) dUnadjRent, ISNULL(ra.dAdjTenantRent,0) dAdjRent, RA.sSource, RA.sDescription,
+
+  rh.dtEffective, rh.dtEnd, rh.sReason, rh.iAdjType, vh.sDescription sAdjType,
+  CASE IsNumeric(rh.dRentAdjFactor) WHEN 1 THEN Convert(Numeric, rh.dRentAdjFactor) ELSE 0 END dAdjFactor,
+
+  ISNULL(rrt.dTenantRent,0) dTenantRent, ISNULL(rrt.dChildcareExp,0) dChildCareExp, ISNULL(rrt.dMedDisExp,0) dMedDisExp,
+  ISNULL(rrt.iDependents, 0) iDependents, ISNULL(rrt.hMy,0) hRRTen,
+
+  CASE UPPER(S.sProgram1d) WHEN 'VO' THEN TP1.sCode WHEN 'PV' THEN TP2.sCode ELSE TP.sCode END TieredTTPSched,
+  S.dTTPHi9jHUD HUDCalcTTP,
+  S.dExclMTWAdjAnnInc,
+  ISNULL(H8S.dExclIncomeModulo,0) dExclIncomeModulo,
+  P.dGrandfatheredRent GrandfatheredRent,
+  RF.sCode RFCode,
+  P.dtRentFactorApplied DateRentFactorApplied,
+  (SELECT case S.iTotFam10k
+			         when 1 then wld.cLimit1
+			         when 2 then wld.cLimit2
+			         when 3 then wld.cLimit3
+			         when 4 then wld.cLimit4
+			         when 5 then wld.cLimit5
+			         when 6 then wld.cLimit6
+			         when 7 then wld.cLimit7
+			         when 8 then wld.cLimit8
+			         when 9 then wld.cLimit9
+			         when 10 then wld.cLimit10
+			         when 11 then wld.cLimit11
+			         when 12 then wld.cLimit12
+			         when 13 then wld.cLimit13
+			         when 14 then wld.cLimit14
+			         when 15 then wld.cLimit15
+			         when 16 then wld.cLimit16
+		        end Income
+		FROM wlinclimit wli
+			   INNER JOIN wlinclimitdet wld on wli.hMy = wld.hInclimit
+    WHERE wli.iPercentIncomeLimit = 100
+			and S.dtEffective2b between wld.dtLimitEffective and wld.dtLimitExpiration
+		) IncLimitIncome,
+  CASE UPPER(S.sProgram1d) WHEN 'VO' THEN V.hTieredTTPSchedule WHEN 'PV' THEN C.hTieredTTPSchedule ELSE P.hTieredTTPSchedule END hTieredTTPSchedule,
+  P.hRentFactorSchedule hRentFactorSchedule,
+  P.dOverriddenRent CurrentGrandfatheredRent,
+  RFD.dFactor,
+
+  wr.hWRSH, wr.dtEffective WR_dtEffective, wr.sDesc WR_sDesc, wr.dPerLossOfSubsidy,
+  CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(TP1.iRangeType, 0) WHEN 'PV' THEN ISNULL(TP2.iRangeType, 0) ELSE ISNULL(TP.iRangeType, 0) END TTPBasis,
+  CASE WHEN (CASE UPPER(S.sProgram1d)
+                    WHEN 'VO' THEN ISNULL(TP1.iBedroomBasedOn, 0)
+                    WHEN 'PV' THEN ISNULL(TP2.iBedroomBasedOn, 0)
+                    ELSE ISNULL(TP.iBedroomBasedOn, 0)
+               END) = 1 THEN 'Bedroom Size'
+         ELSE 'Lower of the Voucher or Bedroom Size'
+    END BedroomBasedOn,
+  ISNULL(V.dFamRent12x_12vHUD, 0) TenantRentToOwnerHUD,
+  ISNULL(V.dOwnHAP12w_12uHUD, 0) HAPToOwnerHUD,
+  v.dOwnProHAP12ak_12ajHUD MixedHAPToOwnerHUD,
+
+  CASE WHEN S.iTotElig10j = S.iTotFam10k THEN
+           Case S.sProgram1d
+                When 'VO' Then ISNULL(V.dFamRent12x_12vHUD, 0)
+                When 'P' Then ISNULL(P.dTR10EHUD, 0)
+                When 'PV' Then ISNULL(C.dTR11sHUD, 0)
+                When 'CE' Then ISNULL(C.dTR11sHUD, 0)
+	         End
+       ELSE
+           Case S.sProgram1d
+                When 'VO' Then ISNULL(V.dMixedTR12AIHUD, 0)
+                When 'P' Then ISNULL(P.dMixedTR10SHUD, 0)
+                When 'PV' Then ISNULL(C.dMixedTR11akHUD, 0)
+                When 'CE' Then ISNULL(C.dMixedTR11akHUD, 0)
+	         End
+  END TenantRentHUD,
+
+  CASE WHEN S.iTotElig10j = S.iTotFam10k THEN
+            Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dFamRent12x, 0)
+	          	   When 'P' Then ISNULL(P.dTR10e, 0)
+	          	   When 'PV' Then ISNULL(C.dTR11s, 0)
+	          	   When 'CE' Then ISNULL(C.dTR11s, 0)
+	          	   When 'MR' Then ISNULL(M.dTR13k,0)
+	          End
+	    ELSE
+ 	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dMixedTR12ai, 0)
+	          	   When 'P' Then ISNULL(P.dMixedTR10s, 0)
+	          	   When 'PV' Then ISNULL(C.dMixedTR11ak, 0)
+	          	   When 'CE' Then ISNULL(C.dMixedTR11ak, 0)
+	          	   When 'MR' Then ISNULL(M.dMixedTR13x,0)
+	          End
+	END TenantRent,
+
+	CASE WHEN S.iTotElig10j = S.iTotFam10k THEN
+	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dUR12y_12wHUD, 0)
+	          	   When 'P' Then ISNULL(P.dUR10eHUD, 0)
+	          	   When 'PV' Then ISNULL(C.dUR11sHUD, 0)
+	          	   When 'CE' Then ISNULL(C.dUR11sHUD, 0)
+	          	   When 'MR' Then ISNULL(M.dUR13kHUD, 0)
+	          End
+	     ELSE
+	          Case S.sProgram1d
+	               When 'VO' Then ISNULL(V.dMixedUR12aiHUD, 0)
+	               When 'P' Then ISNULL(P.dMixedUR10sHUD, 0)
+	               When 'PV' Then ISNULL(C.dMixedUR11akHUD, 0)
+	          	   When 'CE' Then ISNULL(C.dMixedUR11akHUD, 0)
+	          	   When 'MR' Then ISNULL(M.dMixedUR13xHUD, 0)
+	          End
+	END URToFamilyHUD,
+
+	CASE WHEN S.iTotElig10j = S.iTotFam10k THEN
+	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dUR12y, 0)
+	          	   When 'P' Then ISNULL(P.dUR10e, 0)
+	          	   When 'PV' Then ISNULL(C.dUR11s, 0)
+	          	   When 'CE' Then ISNULL(C.dUR11s, 0)
+	          	   When 'MR' Then ISNULL(M.dUR13k, 0)
+	          End
+	     ELSE
+	          Case S.sProgram1d
+	               When 'VO' Then ISNULL(V.dMixedUR12ai, 0)
+	               When 'P' Then ISNULL(P.dMixedUR10s, 0)
+	               When 'PV' Then ISNULL(C.dMixedUR11ak, 0)
+	          	   When 'CE' Then ISNULL(C.dMixedUR11ak, 0)
+	          	   When 'MR' Then ISNULL(M.dMixedUR13x, 0)
+	          End
+	END URToFamily,
+
+	CASE WHEN S.iTotElig10j = S.iTotFam10k THEN
+	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dOwnHAP12w_12uHUD, 0)
+	          	   When 'PV' Then ISNULL(C.dOwnHAP11tHUD, 0)
+	          	   When 'CE' Then ISNULL(C.dOwnHAP11tHUD, 0)
+	          End
+	     ELSE
+	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dOwnProHAP12ak_12ajHUD, 0)
+	          	   When 'PV' Then ISNULL(C.dOwnProHAP11anHUD, 0)
+	          	   When 'CE' Then ISNULL(C.dOwnProHAP11anHUD, 0)
+	          End
+	END HAPHUD,
+
+  CASE WHEN S.iTotElig10j = S.iTotFam10k THEN
+	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dOwnHAP12w, 0)
+	          	   When 'PV' Then ISNULL(C.dOwnHAP11t, 0)
+	          	   When 'CE' Then ISNULL(C.dOwnHAP11t, 0)
+	          	   When 'MR' Then ISNULL(M.dOwnHAP13m, 0)
+                 When 'H' Then ISNULL(H.dHAP15r, 0)
+	          End
+	     ELSE
+	          Case S.sProgram1d
+	          	   When 'VO' Then ISNULL(V.dOwnProHAP12ak, 0)
+	          	   When 'PV' Then ISNULL(C.dOwnProHAP11an, 0)
+	          	   When 'CE' Then ISNULL(C.dOwnProHAP11an, 0)
+	          	   When 'MR' Then ISNULL(M.dOwnProHAP13z, 0)
+                 When 'H' Then ISNULL(H.dProHAP15ae, 0)
+	          End
+	END HAP,
+
+  IsNull(H8S.bEliminateUtilityReimbursement, 0) EliminateURP,
+  ISNULL(H8S.bMTWProgram,0) bMTWProgram,
+  ISNULL(H8S.dFSSStrikepoint,0) dSPStrikepoint,
+  fss.DTEFFECTIVEFSS, fss.dTenantRent fssTenantRent, fss.dMixedFamFlatFee, fss.dCRRentPremium, fss.dFSSStrikepoint, fss.DMONTHLYCREDIT16D1,
+  T.sCode sGroupBy,
+ /* Show alert only for VO where GR > PS ("exceeds") and family share (Gross Rent - Total HAP) > max rent burden (Adj Monthly Income * Rent Burden PercentAMI)  */
+ CASE WHEN s.sProgram1d = 'VO'
+		AND v.DGR12Q > v.DVOPAYSTD12J
+		AND (v.DGR12Q - (CASE WHEN v.bFullSubsidy = -1 THEN v.dHAP ELSE v.DPROHAP12AF END))
+		> (CASE ISNULL(S.HSTPR,0) WHEN 0 THEN isnull(H8SPT.DPERCENTOFAMI,PHA.DPERCENTOFAMI) ELSE ISNULL(H8SP.DPERCENTOFAMI,H8S.DPERCENTOFAMI) END / 100 * s.DADJMONTHLYINC9D)
+	THEN 1
+	ELSE 0 END b40PerWarning,
+  CASE WHEN ISNULL(S.dAdjMonthlyInc9d,0) = 0 THEN 0
+	ELSE (v.DGR12Q - (CASE WHEN v.bFullSubsidy = -1 THEN v.dHAP ELSE v.DPROHAP12AF END))/ S.dAdjMonthlyInc9d * 100
+	END dActAMIPercent,
+  CASE WHEN ISNULL(V.dGR12q,0) >0 AND ISNULL(V.dHAP,0) >0 THEN V.dGR12q - V.dHAP
+		ELSE CASE WHEN ISNULL(V.dGR12q,0) >0 AND ISNULL(V.dProHAP12af,0) >0 THEN V.dGR12q - V.dProHAP12af ELSE 0 END END dRentBurden,
+  ((CASE WHEN ISNULL(V.dGR12q,0) >0 AND ISNULL(V.dHAP,0) >0 THEN V.dGR12q - V.dHAP
+			ELSE CASE WHEN ISNULL(V.dGR12q,0) >0 AND ISNULL(V.dProHAP12af,0) >0 THEN V.dGR12q - V.dProHAP12af ELSE 0 END END )
+			 -(40 * (S.dAdjMonthlyInc9d)/100)) dAmtOverThreshold,
+  CASE S.sProgram1d
+	 WHEN 'P' THEN 'Public Housing'
+     WHEN 'CE' THEN 'Section 8 Certificate'
+     WHEN 'PV' THEN 'Project Based Voucher'
+     WHEN 'VO' THEN 'Section 8 Voucher'
+     WHEN 'MR' THEN 'Mod Rehab'
+     WHEN 'B' THEN 'Indian Housing'
+     WHEN 'H' THEN 'Homeownership'
+  	 ELSE 'Unk' END sProgramDesc,
+  CASE s.sActionType2a
+		When 'A' Then '10'
+		When 'B' Then '11'
+		When 'C' Then '12'
+		When 'D' Then '13'
+		When 'E' Then '14'
+		When 'F' Then '15'
+		Else ISNULL(s.sActionType2a,'0')
+	End sActionType,
+  CASE WHEN SUBSTRING(T.SPHONENUM1,4,1)='-' OR SUBSTRING(T.SPHONENUM1,1,1)='(' THEN T.SPHONENUM1
+       WHEN LEN(RTRIM(T.SPHONENUM1))> 7 AND LEN(RTRIM(T.SPHONENUM1))< 11 THEN '(' + SUBSTRING(T.SPHONENUM1,1,3) + ') ' + SUBSTRING(T.SPHONENUM1,4,3) + '-' + SUBSTRING(T.SPHONENUM1,7,7)
+  	   WHEN LEN(RTRIM(T.SPHONENUM1))> 10 THEN '(' + SUBSTRING(T.SPHONENUM1,1,3) + ') ' + SUBSTRING(T.SPHONENUM1,4,3) + '-' + SUBSTRING(T.SPHONENUM1,7,4)+ ' x '  + SUBSTRING (T.SPHONENUM1, 11,5)
+  	   WHEN LEN(T.SPHONENUM1)> 3 THEN SUBSTRING(T.SPHONENUM1,1,3) + '-' + SUBSTRING(T.SPHONENUM1,4,5)
+  		Else T.SPHONENUM1 END sTenantPhone,
+  CASE WHEN ISNULL(t.sAddr1, '') = ''  THEN '' ELSE t.sAddr1  + Char(13) END +
+	CASE WHEN ISNULL(t.sAddr2, '') = ''  THEN '' ELSE t.sAddr2  + Char(13) END +
+	CASE WHEN ISNULL(t.sCity, '') = ''  THEN '' ELSE CASE WHEN ISNULL(t.sState, '')='' THEN A.sCITY ELSE T.sCity END END + ', ' +
+	CASE WHEN ISNULL(t.sState, '') = ''  THEN '' ELSE T.sState END +
+	CASE WHEN ISNULL(t.sZipCode, '') = ''  THEN '' ELSE ' ' + T.sZipCode END  sMailingAdd,
+  CASE WHEN ISNULL(A.sADDR1, '') = ''  THEN '' ELSE A.sADDR1  + Char(13) END +
+	CASE WHEN ISNULL(A.sAddr2, '') = ''  THEN '' ELSE A.sAddr2  + Char(13) END +
+	CASE WHEN ISNULL(A.sCity, '') = ''  THEN '' ELSE A.sCITY END + ', ' +
+	CASE WHEN ISNULL(A.SSTATE, '') = ''  THEN '' ELSE A.SSTATE END +
+	CASE WHEN ISNULL(A.sZipCode, '') = ''  THEN '' ELSE ' ' + A.sZipCode END  sUnitAdd,
+  CASE WHEN ISNULL(O.sADDR1, '') = ''  THEN '' ELSE O.sADDR1  + Char(13) END +
+	CASE WHEN ISNULL(O.sAddr2, '') = ''  THEN '' ELSE O.sAddr2  + Char(13) END +
+	CASE WHEN ISNULL(O.sCity, '') = ''  THEN '' ELSE O.sCITY + ', ' END +
+	CASE WHEN ISNULL(O.SSTATE, '') = ''  THEN '' ELSE O.SSTATE END +
+	CASE WHEN ISNULL(O.sZipCode, '') = ''  THEN '' ELSE ' ' + O.sZipCode END  sOwnerAdd,
+  CASE WHEN SUBSTRING(O.sPHONENUM0,4,1)='-' OR SUBSTRING(O.sPHONENUM0,1,1)='('  THEN O.sPHONENUM0
+       WHEN LEN(RTRIM(O.sPHONENUM0))> 7 AND LEN(RTRIM(O.sPHONENUM0))< 11  THEN '(' + SUBSTRING(O.sPHONENUM0,1,3) + ') ' + SUBSTRING(O.sPHONENUM0,4,3) + '-' + SUBSTRING(O.sPHONENUM0,7,7)
+	   WHEN LEN(RTRIM(O.sPHONENUM0))> 10  THEN '(' + SUBSTRING(O.sPHONENUM0,1,3) + ') ' + SUBSTRING(O.sPHONENUM0,4,3) + '-' + SUBSTRING(O.sPHONENUM0,7,4)+ ' x ' + SUBSTRING (O.sPHONENUM0, 11,5)
+  	   WHEN LEN(O.sPHONENUM0)> 3 THEN SUBSTRING(O.sPHONENUM0,1,3) + '-' + SUBSTRING(O.sPHONENUM0,4,5)
+  	   Else O.sPHONENUM0 END sOwnerPhone,
+  CASE WHEN ISNULL(OL.sADDR1, '') = ''  THEN '' ELSE OL.sADDR1  + Char(13) END +
+	CASE WHEN ISNULL(OL.sAddr2, '') = ''  THEN '' ELSE OL.sAddr2  + Char(13) END +
+	CASE WHEN ISNULL(OL.sCity, '') = ''  THEN '' ELSE OL.sCITY + ', ' END +
+	CASE WHEN ISNULL(OL.SSTATE, '') = ''  THEN '' ELSE OL.SSTATE END +
+	CASE WHEN ISNULL(OL.sZipCode, '') = ''  THEN '' ELSE ' ' + OL.sZipCode END  sOwnerLetterAdd,
+  CASE WHEN SUBSTRING(OL.sPHONENUM0,4,1)='-' OR SUBSTRING(OL.sPHONENUM0,1,1)='('  THEN OL.sPHONENUM0
+       WHEN LEN(RTRIM(OL.sPHONENUM0))> 7 AND LEN(RTRIM(OL.sPHONENUM0))< 11  THEN '(' + SUBSTRING(OL.sPHONENUM0,1,3) + ') ' + SUBSTRING(OL.sPHONENUM0,4,3) + '-' + SUBSTRING(OL.sPHONENUM0,7,7)
+  	   WHEN LEN(RTRIM(OL.sPHONENUM0))> 10 THEN '(' + SUBSTRING(OL.sPHONENUM0,1,3) + ') ' + SUBSTRING(OL.sPHONENUM0,4,3) + '-' + SUBSTRING(OL.sPHONENUM0,7,4)+ ' x ' + SUBSTRING (OL.sPHONENUM0, 11,5)
+  	   WHEN LEN(OL.sPHONENUM0)> 3 THEN SUBSTRING(OL.sPHONENUM0,1,3) + '-' + SUBSTRING(OL.sPHONENUM0,4,5)
+  	   Else OL.sPHONENUM0 END sOwnerLetterPhone,
+  CASE WHEN S.sProgram1d = 'VO' AND ISNULL(h8s.bMinRentIsRentFloor,0) = 0 AND ISNULL(V.dMixedFamFlatFee,0) = 0 THEN 0 ELSE 1 END bVouCalcSec1Hide,
+  CASE WHEN S.sProgram1d = 'VO' AND ISNULL(h8s.bMinRentIsRentFloor,0) = -1 AND ISNULL(V.dMixedFamFlatFee,0) = 0 THEN 0 ELSE 1 END bVouCalcSec2Hide,
+  CASE WHEN S.sProgram1d <> 'VO' OR ISNULL(V.iTotElig12ac,0) = ISNULL(V.iTotFam12ad,0) OR ISNULL(V.dMixedFamFlatFee,0) =0 THEN 1 ELSE 0 END bVouCalcSec3Hide,
+  CASE WHEN S.sProgram1d <> 'VO' OR ISNULL(V.dProPercent12ae,0) = 0 OR ISNULL(V.dMixedFamFlatFee,0) > 0 THEN 1 ELSE 0 END bProratedHAPHide,
+  CASE WHEN CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0) ELSE ISNULL(P.hTieredTTPSchedule,0) END > 0 OR S.sProgram1d <> 'MR' OR ISNULL(H8S.bEliminateUtilityReimbursement,0) <> -1 THEN 1 ELSE 0 END bEliminateURSec1Hide,
+  CASE WHEN (S.sProgram1d = 'CE' OR S.sProgram1d = 'PV') AND ISNULL(H8S.bPBVProgramPmtStd,0) = 0 THEN 0 ELSE 1 END bPBSec1Hide,
+  CASE WHEN (S.sProgram1d = 'CE' OR S.sProgram1d = 'PV') AND ISNULL(C.iTotElig11ae,0) < ISNULL(C.iTotFam11af,0) AND ISNULL(H8S.bPBVProgramPmtStd,0) = 0 THEN 0 ELSE 1 END bPBSec12Hide,
+  CASE WHEN (S.sProgram1d = 'CE' OR S.sProgram1d = 'PV') AND ISNULL(H8S.bPBVProgramPmtStd,0) = -1 THEN 0 ELSE 1 END bPBSec2Hide,
+  CASE WHEN (S.sProgram1d = 'CE' OR S.sProgram1d = 'PV') AND ISNULL(C.iTotElig11ae,0) < ISNULL(C.iTotFam11af,0) AND ISNULL(H8S.bPBVProgramPmtStd,0) = -1 THEN 0 ELSE 1 END bPBSec22Hide,
+  CASE WHEN CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0) ELSE ISNULL(P.hTieredTTPSchedule,0) END > 0 OR (S.sProgram1d <> 'PV'  AND S.sProgram1d <> 'CE') OR ISNULL(H8S.bEliminateUtilityReimbursement,0) <> -1 THEN 1 ELSE 0 END bEliminateURSec2Hide,
+  CASE WHEN CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0) ELSE ISNULL(P.hTieredTTPSchedule,0) END > 0 OR S.sProgram1d <> 'VO' OR ISNULL(H8S.bEliminateUtilityReimbursement,0) <> -1 THEN 1 ELSE 0 END bEliminateURSec3Hide,
+  CASE WHEN sProgram1d ='P' OR O.uCode = OL.uCode OR LEN(ISNULL(OL.uCode,'')) =0 THEN 1 ELSE 0 END bOwnerLetterHide,
+  CASE WHEN LEN(ISNULL(O.uCode,'')) = 0 OR LEN(ISNULL(OL.uCode,'')) =0 OR ISNULL(O.uCode,'') <> ISNULL(OL.uCode,'') THEN 1 ELSE 0 END bOwnerLetter2Hide,
+  CASE WHEN sProgram1d ='P' AND ISNULL(h8s.bMinRentIsRentFloor,0) =0	AND ISNULL(P.dMixedFamFlatFee,0) =0 THEN 0 ELSE 1 END bPHCalcSec1Hide,
+  CASE WHEN sProgram1d <>'P' OR ISNULL(P.iTotElig10j,0) = ISNULL(P.iTotFam10k,0)	OR ISNULL(P.dMixedFamFlatFee,0) >0 THEN 1 ELSE 0 END bPHCalcSec12Hide,
+  CASE WHEN sProgram1d ='P' AND (ISNULL(h8s.bMinRentIsRentFloor,0) <>0	OR ISNULL(P.dMixedFamFlatFee,0) <> 0) THEN 0 ELSE 1 END bPHCalcSec2Hide,
+  CASE WHEN sProgram1d ='P' AND (ISNULL(h8s.bMinRentIsRentFloor,0) <>0	OR ISNULL(P.dMixedFamFlatFee,0) <> 0) AND ISNULL(P.iTotElig10j,0) = ISNULL(P.iTotFam10k,0) THEN 0 ELSE 1 END bPHCalcSec21Hide,
+  CASE WHEN sProgram1d ='P' AND ISNULL(P.iTotElig10j,0) < ISNULL(P.iTotFam10k,0) AND (ISNULL(h8s.bMinRentIsRentFloor,0) <>0	OR ISNULL(P.dMixedFamFlatFee,0) <> 0) THEN 0 ELSE 1 END bPHCalcSec22Hide,
+  CASE WHEN S.sProgram1d = 'VO' OR
+            S.sProgram1d = 'PV' OR
+            CASE UPPER(S.sProgram1d)
+                 WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0)
+                 WHEN 'PV' THEN ISNULL(C.hTieredTTPSchedule,0)
+                 ELSE ISNULL(P.hTieredTTPSchedule,0)
+            END <= 0 THEN 1 ELSE 0 END bTieredTTPSec1Hide,
+  CASE WHEN (S.sProgram1d <> 'VO' and S.sProgram1d <> 'PV') OR
+            CASE UPPER(S.sProgram1d)
+                 WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0)
+                 WHEN 'PV' THEN ISNULL(C.hTieredTTPSchedule,0)
+                 ELSE ISNULL(P.hTieredTTPSchedule,0)
+            END <= 0 THEN 1 ELSE 0 END bTieredTTPSec2Hide,
+  CASE WHEN ISNULL(P.hRentFactorSchedule,0) <=0 OR CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0) ELSE ISNULL(P.hTieredTTPSchedule,0) END > 0 THEN 1 ELSE 0 END bFixedIRAdjHide,
+  CASE WHEN sProgram1d <>'P' OR CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0) ELSE ISNULL(P.hTieredTTPSchedule,0) END > 0 OR ISNULL(H8S.bEliminateUtilityReimbursement,0) <> -1 THEN 1 ELSE 0 END bPHEliminateURHide,
+  CASE WHEN ISNULL(P.hRentFactorSchedule,0) <=0 OR CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(V.hTieredTTPSchedule,0) ELSE ISNULL(P.hTieredTTPSchedule,0) END > 0 THEN 1 ELSE 0 END bWorkReqSecHide,
+  CASE WHEN	ISNULL(h8s.bMinRentIsRentFloor,0) = -1
+						AND ISNULL(h8s.iMinRentRentPremium,0) <> 2
+						AND	(ISNULL(S.dtTphi9j,0) - ISNULL(V.dUA12n,0)) < (CASE WHEN ISNULL(V.dCR12p,0) > ISNULL(V.dVoPayStd12j,0) THEN ISNULL(V.dCR12p,0) - ISNULL(V.dVoPayStd12j,0) ELSE 0 END + V.dMinTenRent)
+			 THEN  'Payment Standard Less Contract Rent:'
+			 ELSE CASE WHEN
+					 						 CASE WHEN ISNULL(V.dGR12q,0) > ISNULL(V.dVoPayStd12j,0)
+											 THEN ISNULL(V.dGR12q,0) - ISNULL(V.dVoPayStd12j,0)
+											 ELSE 0 END >0
+									THEN 'Payment Standard Less Gross Rent:'
+									ELSE '' END
+	END sVouCalPSCaption,
+  CASE WHEN	ISNULL(h8s.bMinRentIsRentFloor,0) = -1
+						AND ISNULL(h8s.iMinRentRentPremium,0) <> 2
+						AND	(ISNULL(S.dtTphi9j,0) - ISNULL(V.dUA12n,0)) < (CASE WHEN ISNULL(V.dCR12p,0) > ISNULL(V.dVoPayStd12j,0) THEN ISNULL(V.dCR12p,0) - ISNULL(V.dVoPayStd12j,0) ELSE 0 END + V.dMinTenRent)
+			 THEN  CASE WHEN ISNULL(V.dCR12p,0) > ISNULL(V.dVoPayStd12j,0) THEN ISNULL(V.dCR12p,0) - ISNULL(V.dVoPayStd12j,0) ELSE 0 END
+			 ELSE CASE WHEN
+					 						 CASE WHEN ISNULL(V.dGR12q,0) > ISNULL(V.dVoPayStd12j,0)
+											 THEN ISNULL(V.dGR12q,0) - ISNULL(V.dVoPayStd12j,0)
+											 ELSE 0 END >0
+									THEN
+									CASE WHEN ISNULL(V.dGR12q,0) > ISNULL(V.dVoPayStd12j,0)  THEN ISNULL(V.dGR12q,0) - ISNULL(V.dVoPayStd12j,0) ELSE 0 END
+									ELSE 0 END
+	END dVouCalPSValue,
+  S.dtTermLimitStart,
+  S.dtTermLimitEnd,
+  ISNULL(H8S.iTermLimitMonths, 0) iTermLimitMonths,
+  ISNULL(h8s.bMTWFRBasedFlatSubsidy,0) iMTWFR,
+  ISNULL(h8s.dMTWFRPctFlatSubsidy,0) dMTWFR,
+	CASE WHEN	ISNULL(h8s.bMTWFRBasedFlatSubsidy,0) = -1 and ISNULL(h8s.dMTWFRPctFlatSubsidy,0) > 0 THEN (P.ddefaultFR * (h8s.dMTWFRPctFlatSubsidy/100))
+	     ELSE P.dLowerRent10c
+	END MTW_10c,
+	CASE WHEN	ISNULL(h8s.bMTWFRBasedFlatSubsidy,0) = -1 and ISNULL(h8s.dMTWFRPctFlatSubsidy,0) > 0
+	     THEN (CASE WHEN ISNULL(h8s.bMTWFRBasedFlatSubsidy,0) = -1 and ISNULL(h8s.dMTWFRPctFlatSubsidy,0) > 0 THEN (P.ddefaultFR * (h8s.dMTWFRPctFlatSubsidy/100))
+	                ELSE P.dLowerRent10c
+	           END - (CASE WHEN  S.iTotElig10j < S.iTotFam10k THEN P.dUA10r ELSE P.dUA10d END)
+            )
+	     ELSE P.dTR10EHUD
+	END MTW_10e,
+  isnull(H8S.bMixedFamFlatFeePerMember,0) bMixedFamFlatFeePerMember,
+  isnull(H8S.dMixedFamFlatFeeAmt,0) dMixedFamFlatFeeAmt,
+  CASE WHEN S.sProgram1d = 'PV' OR
+            (CASE UPPER(S.sProgram1d) WHEN 'VO' THEN ISNULL(TP1.iRangeType, 0) WHEN 'PV' THEN ISNULL(TP2.iRangeType, 0) ELSE ISNULL(TP.iRangeType, 0) END) <> 1
+       THEN 1
+       ELSE 0
+  END HideBedroombasedOnLine,
+  Case S.sProgram1d
+       WHEN 'P' THEN (P.iTotFam10k - P.iTotElig10j)
+       WHEN 'VO' THEN (V.iTotFam12ad - V.iTotElig12ac)
+       WHEN 'PV' THEN (C.iTotFam11af - C.iTotElig11ae)
+       WHEN 'CE' THEN (C.iTotFam11af - C.iTotElig11ae)
+  End InEligibleMembers,
+  CASE WHEN isnull(H8S.bMixedFamFlatFeePerMember,0)=0 THEN 'Mixed Family Flat Fee for Household:'
+       ELSE 'Mixed Family Flat Fee per Ineligible Member:'
+  END MTW_MFFF_For,
+  CASE S.sProgram1d
+       WHEN 'P' THEN P.dMixedFamFlatFee
+       WHEN 'VO' THEN V.dMixedFamFlatFee
+       WHEN 'PV' THEN C.dMixedFamFlatFee
+       WHEN 'CE' THEN C.dMixedFamFlatFee
+  END MixedFamFlatFee,
+  ISNULL(H8S.bTTPBaseline,0) bTTPBaseline,
+  ISNULL(S.dttpbaseline,0) dTTPBaseline,
+  ISNULL(H8S.dMTWPSPctFlatSubsidyCal,0) dMTWPSPctFlatSubsidyCal,
+  ISNULL(H8S.bMTWEnablePSBasedFlatSubsidy,0) bMTWEnablePSBasedFlatSubsidy,
+  ISNULL(H8S.hTieredSubsidySchedule, 0) hTieredSubsidySchedule,
+  Case ISNULL(S.HSTPR,0) WHEN 0 Then isnull(H8SPT.DPERCENTOFAMI,PHA.DPERCENTOFAMI) else isnull(H8SP.DPERCENTOFAMI,H8S.DPERCENTOFAMI) end PercentOfAMI,
+  P.dJPEIDIncTTP,
+  CASE WHEN H8P.bJPEID = -1  AND UPPER(LTRIM(RTRIM(H8P.sProgramDefault))) = 'P' THEN
+ 				CASE WHEN (SELECT Count(I.hMy)
+  									FROM H8Income I
+  									WHERE I.hJPEIDHistory > 0 AND UPPER(LTRIM(RTRIM(S.sProgram1d))) = 'P'
+  									AND I.hSum = S.hMy ) > 0 THEN 'Yes' ELSE 'No' END
+  			 ELSE 'No' END IsJPEIDParticipant
+  , CASE WHEN v.bFullSubsidy = -1 THEN v.dOwnHAP12w ELSE v.dOwnProHAP12ak END dVOOwnerHAP
+	, IsNull(v.dSpaceRent, 0) dSpaceRent, IsNull(v.dOwnerManagementMaintenance, 0) dOwnerManagementMaintenance, IsNull(v.dSpaceRent, 0) + IsNull(v.dOwnerManagementMaintenance, 0) dTotalSpaceRent
+	, IsNull(v.dLoanPrincipalAndInterest, 0) dLoanPrincipalAndInterest, IsNull(v.dPropertyTaxEscrow, 0) dPropertyTaxEscrow, IsNull(v.dHomeownerInsurenceEscrow, 0) dHomeownerInsurenceEscrow, IsNull(v.dMortgageInsurencePremium, 0) dMortgageInsurencePremium
+	, IsNull(v.dSetupLoanDebtService, 0) dSetupLoanDebtService, IsNull(v.dSpaceRent, 0) + IsNull(v.dOwnerManagementMaintenance, 0) + IsNull(v.dLoanPrincipalAndInterest, 0) + IsNull(v.dPropertyTaxEscrow, 0) + IsNull(v.dHomeownerInsurenceEscrow, 0) +
+	  IsNull(v.dMortgageInsurencePremium, 0) + IsNull(v.dSetupLoanDebtService, 0) dTotalRentAndMortgage, IsNull(v.dRecalculateHAP, 0) dRecalculateHAP, IsNull(v.dRecalculateTenantRentToOwner, 0) dRecalculateTenantRentToOwner
+	, IsNull(v.dRecalculateHAPToTenant, 0) dRecalculateHAPToTenant, CASE WHEN s.sProgram1d = 'VO' AND IsNull(v.sLeaseSpace, '') = 'Y' AND (IsNull(v.dRecalculateHAP, 0) > 0 Or IsNull(v.dRecalculateTenantRentToOwner, 0) > 0 Or IsNull(v.dRecalculateHAPToTenant, 0)  > 0) THEN -1 ELSE 0 END bShowOMHLS
+
+FROM ((((((((((#H8SummTEMP S LEFT JOIN TENANT T ON S.hTenant =  T.hMyPerson)
+                 LEFT OUTER JOIN PERSON E ON E.hMy = S.hCaseworker and E.iPersonType = 79)
+                 LEFT JOIN UNIT U ON S.hUnit =  U.hMY)
+                 LEFT JOIN PROPERTY PR ON PR.hMy = U.hPROPERTY)
+                 LEFT JOIN ADDR A ON A.hPointer =  U.hMY and A.iType = 4)
+                 LEFT JOIN #H8PublicTEMP P ON S.hMy =  P.hSum)
+                 LEFT JOIN #H8CertifTEMP C ON S.hMy =  C.hSum )
+                 LEFT JOIN #H8VouchTemp V ON S.hMy = V.hSum)
+                 LEFT JOIN #H8ModRehTemp M ON S.hMy =  M.hSum)
+                 LEFT JOIN #H8HomeOwnershipTemp H ON S.hMy = H.hSum)
+                 LEFT JOIN H8Param PHA on PHA.hChart = 0
+                 LEFT JOIN H8StPrParamByDate H8SPT ON H8SPT.hStPr = PHA.hChart
+						AND S.DTEFFECTIVE2B  BETWEEN H8SPT.dtEffective AND H8SPT.dtEnd
+						AND H8SPT.bApproved = -1
+						AND H8SPT.iCorrectionNum = (SELECT MAX(iCorrectionNum) iCorrectionNum
+						FROM H8StPrParamByDate
+						WHERE S.DTEFFECTIVE2B  BETWEEN dtEffective AND dtEnd
+						AND bApproved = -1
+						AND hStPr = PHA.hChart)
+                 LEFT JOIN H8stpr H8S on S.hstpr = H8S.hmy
+                 LEFT JOIN H8STPRParamByDate H8SP on h8s.HMY = H8SP.hStPr and  S.dtEffective2b between H8SP.dtEffective and H8SP.dtEnd
+				                             And  H8SP.iCorrectionNum = (SELECT MAX(iCorrectionNum) iCorrectionNum
+																			FROM H8StPrParamByDate
+																			WHERE s.DTEFFECTIVE2B  BETWEEN dtEffective AND dtEnd
+																			AND bApproved = -1
+																			AND hStPr = H8S.hMy)
+                 LEFT JOIN Person O On O.hMy = Case S.sProgram1d
+                                                    When 'CE' Then C.hVendor
+                                                    When 'VO' Then V.hVendor
+                                                    When 'MR' Then M.hVendor
+						                            When 'PV' Then C.hVendor
+						                            When 'H' Then H.hVendor
+						                            Else S.hVendor
+						                            End
+		  LEFT JOIN H8Unit H8U on U.hmy = H8U.hUnit
+		  LEFT JOIN Person OL on OL.hMy = H8U.hVendorLtr
+		  LEFT JOIN h8RentAdjustment RA on RA.hSum = s.hMy
+		  LEFT JOIN MTWRentHardship rh on rh.hMy = ra.hSource
+		  LEFT JOIN MTWRentHardshipParam vh on vh.iHardshipType = rh.iAdjType
+		  LEFT JOIN MTWRentReformTenant rrt on rrt.hMy = rh.hrentreformtenant
+		  LEFT JOIN MTWTIEREDTTP TP on TP.hMy = P.hTieredTTPSchedule
+		  LEFT JOIN MTWTIEREDTTP TP1 on TP1.hMy = V.hTieredTTPSchedule
+		  LEFT JOIN MTWTIEREDTTP TP2 on TP2.hMy = C.hTieredTTPSchedule
+		  LEFT JOIN MTWRENTFACTOR RF on RF.hMy = p.hRentFactor
+		  LEFT JOIN MTWRENTFACTORDET RFD on RF.hMy = RFD.hMTWRentFactor and S.dtEffective2b between RFD.dtEffective and RFD.dtEnd and RFD.dtApproved is not null
+		  LEFT JOIN (SELECT wrsh.hMy hWRSH, wrsh.dtEffective, wrs.sDesc, wrs.dPerLossOfSubsidy
+                             FROM MTWWorkReqSanctionsHistory wrsh
+                                  JOIN MTWWorkReqSanction wrs ON wrs.hMy = wrsh.hMTWWorkReqSanction) WR on WR.hWRSH = RA.hSource
+		  LEFT JOIN (SELECT hMy, hSum, DTEFFECTIVEFSS, dTenantRent, dMixedFamFlatFee, dCRRentPremium, dFSSStrikepoint, DMONTHLYCREDIT16D1
+                             FROM h8FSS WHERE ISNULL(dFSSStrikepoint,0) > 0) fss on fss.hSum = s.hMy
+		  LEFT JOIN H8SummHddr SH ON SH.hSumm = s.hmy
+		  LEFT JOIN H8Prop H8P On H8P.hProp = T.hProperty
+		  LEFT JOIN h8RADQual radq on radq.hTenant = t.hMyPerson AND s.sProgram1d = 'PV'
+WHERE 1=1
+) S
+//end select
+
+//Select Family_Members
+DECLARE @Security INT
+SET @Security = (select svalue from paramopt2 where stype = 'ENABLEDATAENCRYPTION')
+
+SELECT F.hSum FhSum, F.hTenant,
+  F.IMEMBERNUM, F.sLastName, F.sFirstName, F.sMI,
+  Convert(varchar(10),case @Security when -1 then dbo.DB_DataDecrypt(F.dtDoBSecure) else F.dtDoB END,101) dtDOB,
+  F.iAge, F.sSex, F.sRelation, F.sCitizen, F.sDisability, F.sEthnicity,
+  F.sRace1, F.sRace2, F.sRace3, F.sRace4, F.sRace5,
+  F.sService,
+  CASE WHEN (CASE WHEN F.sRace1 = 'Y' THEN '1,' ELSE '' END
+           + CASE WHEN F.sRace2 = 'Y' THEN '2,' ELSE '' END
+           + CASE WHEN F.sRace3 = 'Y' THEN '3,' ELSE '' END
+           + CASE WHEN F.sRace4 = 'Y' THEN '4,' ELSE '' END
+           + CASE WHEN F.sRace5 = 'Y' THEN '5,' ELSE '' END
+           ) = '' THEN 'Unk'
+       ELSE LEFT((CASE WHEN F.sRace1 = 'Y' THEN '1,' ELSE '' END
+                + CASE WHEN F.sRace2 = 'Y' THEN '2,' ELSE '' END
+                + CASE WHEN F.sRace3 = 'Y' THEN '3,' ELSE '' END
+                + CASE WHEN F.sRace4 = 'Y' THEN '4,' ELSE '' END
+                + CASE WHEN F.sRace5 = 'Y' THEN '5,' ELSE '' END
+                 ),
+				LEN(CASE WHEN F.sRace1 = 'Y' THEN '1,' ELSE '' END
+				  + CASE WHEN F.sRace2 = 'Y' THEN '2,' ELSE '' END
+				  + CASE WHEN F.sRace3 = 'Y' THEN '3,' ELSE '' END
+				  + CASE WHEN F.sRace4 = 'Y' THEN '4,' ELSE '' END
+				  + CASE WHEN F.sRace5 = 'Y' THEN '5,' ELSE '' END
+				  )-1)
+  END sRace
+FROM H8Family F, #H8SummTEMP S, Tenant T, Unit U, Property PR
+WHERE F.hSum = S.hMy
+	and S.hTenant = T.hMyPerson
+	and T.hUnit = U.hMy
+	and U.hProperty = PR.hMy
+	#CONDITIONS#
+ORDER BY F.iMemberNum
+//end select Family_Members
+
+//Select Asset_Subreport
+SELECT I.hSum IhSum, I.hTenant, I.iMemberNum, I.sLastName, I.sFirstName, I.sMI , I.sAssetDesc6b,  I.sHAUse6c7c,I.dAsset6d, I.dIncome6e7d
+FROM H8Income I, #H8SummTEMP S, Tenant T, Unit U, Property PR
+WHERE I.hSum = S.hMy
+	and I.iType = 2
+	and S.hTenant = T.hMyPerson
+	and T.hUnit = U.hMy
+	and U.hProperty = PR.hMy
+	#CONDITIONS#
+//End Asset_Subreport
+
+//select Income_Subreport
+SELECT I.hSum IhSum, I.hTenant, I.iMemberNum, I.sLastName, I.sFirstName, I.sMI, I.sHAUse6c7c, I.dIncome6e7d, I.dExclIncPerYr7e,
+	I.dIncMinusExcl7f, I.sIncCode7b, I.sAssetDesc6b, I.dEarnDeduct7g
+FROM H8Income I, #H8SummTEMP S, Tenant T, Unit U, Property PR
+WHERE I.hSum = S.hMy
+	and I.iType = 1
+	and S.hTenant = T.hMyPerson
+	and T.hUnit = U.hMy
+	and U.hProperty = PR.hMy
+	#CONDITIONS#
+//end select Income_Subreport
+
+//Select ForceSubreportVisibility
+SELECT ' ' AS sDummy
+//End ForceSubreportVisibility
+
+//Columns
+//Type  Name    Head1   Head2   Head3           Head4                   Show    Color   Formula Drill  Key   Width
+//End columns
+
+//Filter
+//Type, DataTyp,        Name,         Caption,        Key,    List,                                                   Val1, Val2, Mandatory, Multi-Type, Title  Title
+     0,        T,         hMy,   Tenant Code,   ,             ,   "S.htenant = #hMy# AND IsNull(s.bMasterRecd, 0) = -1",    ,    ,    ,   Y,
+     0,        T,         hSum,         50058 ID,   ,             ,   S.hMy = #hSum#,    ,    ,    ,   Y,
+//end filter

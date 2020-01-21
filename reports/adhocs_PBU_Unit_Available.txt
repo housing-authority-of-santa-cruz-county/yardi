@@ -61,6 +61,7 @@ SELECT DISTINCT  'y_PBU_Main' + CASE WHEN Tenant.sfields0 = 'Spanish' OR wla.sfi
              , unit.sCode ucode
              , '#Field114#' LLPhone
              , wlwaitlist.sDesc wlCode
+             , wlwaitlistwlapplic.dtapplied 'applieddate'
              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN wla.dtapplied ELSE null END 'dtapplied'
              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN null ELSE cast(wlwaitlistwlapplic.iscorepoints as varchar) end 'sequence'
              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN wla.dtapplied ELSE null END 'dtappliedS'
@@ -68,15 +69,15 @@ SELECT DISTINCT  'y_PBU_Main' + CASE WHEN Tenant.sfields0 = 'Spanish' OR wla.sfi
              , case when isnull(UAddr.saddr1, '') <> '' then CASE WHEN CHARINDEX(',',Uaddr.saddr1) > 0 THEN rtrim(LEFT(Uaddr.saddr1, CHARINDEX(',', Uaddr.saddr1)-1 )) WHEN CHARINDEX('#',Uaddr.saddr1) > 0 THEN rtrim(LEFT(Uaddr.saddr1, CHARINDEX('#', Uaddr.saddr1)-1 )) ELSE Uaddr.saddr1 end + '^' else '' end + case when isnull(UAddr.sCity, '') <> '' then ltrim(rtrim(UAddr.sCity)) else '' end + case when isnull(UAddr.sState, '') = '' and isnull(UAddr.sZipCode, '') = '' then ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) else ', ' + ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) end 'unitaddress'
 FROM Tenant
 LEFT JOIN wlapplic wla ON (wla.hTenant = Tenant.hMyPerson)
-LEFT JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)
+LEFT JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy) AND (wlwaitlistwlapplic.dtEnd = '2100-01-01') AND wlwaitlistwlapplic.SSTATUS <> 'Removed'
 LEFT JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
 LEFT JOIN WLApplicPrefs  ON (WLApplicPrefs.HWLApplic = wla.hMy)
 LEFT JOIN WLPreference  ON (WLPreference.hMy = WLApplicPrefs.HPreference)
-cross join board_commishes_footer_RSC rsc,Unit LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
+cross join board_commishes_footer_RSC rsc,Property p INNER JOIN Unit ON (p.hmy=Unit.hProperty) LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
 
 WHERE 1 = 1
 #conditions#
-ORDER BY  tenant.sCode ASC
+ORDER BY wlwaitlistwlapplic.dtapplied asc
 //End Select Primary
 
 //Format
@@ -93,8 +94,9 @@ unitaddress MultiLine
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
 0    ,T    ,"Field110"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field110#') ",     ,Y    ,   ,Y
 0    ,T    ,"Field10"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
+C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
 0    ,T    ,"Field112"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field112#') ",     ,Y    ,   ,Y
-R    ,A    ,DAT15:DAT25    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wla.dtapplied, 101) as DateTime)  Between  '#dat15#' AND '#dat25#'",     ,N    ,   ,Y
+R    ,A    ,DAT15:DAT25    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wlwaitlistwlapplic.dtapplied, 101) as DateTime)  Between  '#dat15#' AND '#dat25#'",     ,N    ,   ,Y
 R   ,I    ,"VAL16:VAL26"    ,"Score"    ,  ,""    ,"wlwaitlistwlapplic.iscorepoints Between #VAL16# AND #VAL26#",     ,N    ,   ,Y
 0    ,T    ,"Field119"    ,"Preference Code"    ,  ,""    ,"LTRIM(RTRIM(ISNULL( WLPreference.sCode , ''))) like LTRIM(RTRIM(ISNULL('%#Field119#%', ' ')))",     ,N    ,   ,Y
 L    ,T    ,"Field18"    ,"HOH Gender"    ,  ,"M^F^Any"    ,"1= CASE WHEN '#Field18#' = 'Any' THEN 1 ELSE CASE WHEN wla.shohsex = '#Field18#' THEN 1 ELSE 0 END END",     ,N    ,   ,Y

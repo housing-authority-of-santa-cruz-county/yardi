@@ -42,19 +42,19 @@ PB Recip List
 
 //GRID recips
 select DISTINCT WLTen.sLastName + ', ' + WLTen.sFirstName 'recipname'
-      , wla.dtapplied 'effdate'
+      , wlwaitlistwlapplic.dtapplied 'effdate'
       , CASE WHEN ISNULL(wla.shohsex, 'No') = 'F' THEN 'Female' ELSE CASE WHEN ISNULL(wla.shohsex, 'No') = 'M' THEN 'Male' END END 'gender'
       , CASE WHEN isNull(wla.sField0,'') <> '' THEN wla.sField0 ELSE 'English' END 'language'
     FROM  Tenant wlTenant
     INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
-    INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+    INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01') AND (wlwaitlistwlapplic.SSTATUS <> 'Removed')
     INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
     LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
     LEFT JOIN WLApplicPrefs  ON (WLApplicPrefs.HWLApplic = wla.hMy)
     LEFT JOIN WLPreference  ON (WLPreference.hMy = WLApplicPrefs.HPreference)
     WHERE 1 = 1
     #conditions#
-    ORDER BY wla.dtapplied ASC
+    ORDER BY wlwaitlistwlapplic.dtapplied asc
 
 //End SELECT
 
@@ -68,7 +68,7 @@ LetterDate MMMM DD, YYYY
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
 0    ,T    ,"Field110"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field110#') ",     ,N    ,   ,Y
 0    ,T    ,"Field10"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
-R    ,A    ,DAT15:DAT25    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wla.dtapplied, 101) as DateTime)  Between  '#dat15#' AND '#dat25#'",     ,N    ,   ,Y
+R    ,A    ,DAT15:DAT25    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wlwaitlistwlapplic.dtapplied, 101) as DateTime)  Between  '#dat15#' AND '#dat25#'",     ,N    ,   ,Y
 R   ,I    ,"VAL16:VAL26"    ,"Score"    ,  ,""    ,"wlwaitlistwlapplic.iscorepoints Between #VAL16# AND #VAL26#",     ,N    ,   ,Y
 L    ,T    ,"Field18"    ,"HOH Gender"    ,  ,"M^F^Any"    ,"1= CASE WHEN '#Field18#' = 'Any' THEN 1 ELSE CASE WHEN wla.shohsex = '#Field18#' THEN 1 ELSE 0 END END",     ,N    ,   ,Y
 L    ,T    ,"FillText11"    ,"Complex Name"    ,  ,"Regular S8^El Centro^Sunrise^St. Stephens^Resetar^Pippin Orchards"    ,"",     ,N    ,   ,Y

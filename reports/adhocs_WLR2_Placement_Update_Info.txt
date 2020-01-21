@@ -1,0 +1,95 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_WLR2_Placement_Update_Info.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    09/18/2019 - Created by jonathan
+    09/18/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+WLR Placement Update info
+//End Title
+
+//Select Primary
+ SELECT DISTINCT 'Y_WLR2_Placement_Update.docx' _FILE_NL1_
+ , CASE WHEN WLTen.sfields0 = 'Spanish' OR wla.sfield0 = 'Spanish' THEN 'Y_WLR2_Placement_Update_Spanish.docx' ELSE '' END _FILE_NL2_
+ ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
+                 rsc.chairperson                             chairperson,
+                 rsc.viceChairperson                         viceChairperson,
+                 rsc.boardmember1                            boardmember1,
+                 rsc.boardmember2                            boardmember2,
+                 rsc.boardmember3                            boardmember3,
+                 rsc.boardmember4                            boardmember4,
+                 rsc.boardmember5                            boardmember5,
+                 rsc.execDirector                            execDirector
+              , wlwaitlist.sCode 'WLCode'
+              , wlwaitlist.sDesc 'WLDesc'
+              , ltrim(rtrim(wlwaitlist.sPropCode)) 'WLPropCode'
+              , WLTen.scode 'tcode'
+              , WLTen.sFirstName + ' ' + WLTen.sLastName 'ToName'
+              , case when isnull(WLTen.saddr1, '') <> '' then ltrim(rtrim(WLTen.saddr1)) + '^' else '' end + case when isnull(WLTen.saddr2, '') <> '' then ltrim(rtrim(WLTen.saddr2)) + '^' else '' end + case when isnull(WLTen.sCity, '') <> '' then ltrim(rtrim(WLTen.sCity)) else '' end + case when isnull(WLTen.sState, '') = '' and isnull(WLTen.sZipCode, '') = '' then ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) else ', ' + ltrim(rtrim(WLTen.sState)) + ' ' + ltrim(rtrim(WLTen.SZIPCODE)) end 'MailAddress'
+              , wla.dtapplied 'AppAppliedDate'
+              , wla.dtapplied 'AppAppliedDateS'
+              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN 'Date of Name Placement' else 'Sequence#' END 'dtappliedtext'
+              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN 'Fecha de colocación del nombre' else 'Secuencia#' END 'dtappliedtexts'
+              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN wla.dtapplied ELSE null END 'dtapplied'
+              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN null ELSE cast(wlwaitlistwlapplic.iscorepoints as varchar) end 'sequence'
+              , CASE WHEN wlwaitlist.sCode  IN  ('Merrill','USDA','SCS82011','HO82011','LIPH','PB-EC','PB-R','SCS82011') THEN wla.dtapplied ELSE null END 'dtappliedS'
+              , CASE WHEN WLApplicPrefs.hPreference in (12,13) THEN 'are' ELSE 'are not' END 'InPrefGrp'
+              , CASE WHEN WLApplicPrefs.hPreference in (12,13) THEN 'está' ELSE 'no está' END 'InPrefGrpS'
+              , Review58SUMM.dteffective2b 'Review58EffDate'
+              , Review58SUMM.dteffective2b 'Review58EffDateS'
+              , Case WHEN ISNULL('#FillText11#','') <> '' THEN char(13)+char(10)+char(13)+char(10)+'#FillText11#' +char(13)+char(10)+char(13)+char(10) ELSE '' END 'Notes'
+              , GETDATE() 'LetterDate'
+              , GETDATE() 'LetterDateSpan'
+ FROM  Property p  INNER JOIN h8Summ ON (p.hMy = h8Summ.hProp)  AND (h8Summ.bMasterRecd = -1)
+ INNER JOIN Tenant wlTenant ON (wlTenant.hProperty = p.hMy)
+ INNER JOIN wlapplic wla ON (wla.hTenant = wlTenant.hMyPerson)
+ INNER JOIN wlwaitlistwlapplic ON (wlwaitlistwlapplic.hwlapplic = wla.hMy)  AND (wlwaitlistwlapplic.dtEnd = '2100-01-01')
+ INNER JOIN wlwaitlist ON (wlwaitlistwlapplic.hWaitList = wlwaitlist.hMy)
+ LEFT JOIN WLApplicPrefs  ON (WLApplicPrefs.HWLApplic = wla.hMy) AND WLApplicPrefs.hPreference in (12,13)
+ LEFT JOIN Tenant WLTen ON (wla.htenant = WLTen.hmyperson)
+ INNER JOIN h8Summ Review58SUMM ON (p.hmy = Review58SUMM.hprop)  AND (ISNULL(Review58SUMM.bMasterRecd, 0) = 0)
+ cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ AND Review58SUMM.dteffective2b=(select max(Review58SUMM2.dteffective2b) from h8Summ Review58SUMM2 inner JOIN tenant t on (t.hProperty = Review58SUMM2.hprop AND (ISNULL(Review58SUMM2.bMasterRecd, 0) = 0)) WHERE t.scode = wlTenant.scode )
+ #conditions#
+ ORDER BY  Review58SUMM.dteffective2b DESC
+//End Select Primary
+
+//Format
+AppAppliedDate MM/DD/YYYY
+Review58EffDate MM/DD/YYYY
+AppAppliedDateS DD/MM/YYYY
+Review58EffDateS DD/MM/YYYY
+LetterDate MMMM DD, YYYY
+LetterDateSpan DD MMMM YYYY
+MailAddress Multiline
+dtapplied MM/DD/YYYY
+dtapplieds DD/MM/YYYY
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,T    ,"Field10"    ,"Waiting list"    ,  ,"307"    ,"wlwaitlist.sCode  IN  ('#Field10#') ",     ,N    ,   ,Y
+0    ,T    ,"Field13"    ,"Tenant Code"    ,  ,"1"    ,"WLTen.scode  IN  ('#Field13#') ",     ,N    ,   ,Y
+R    ,A    ,DAT16:DAT26    ,"Applied Date"    ,  ,""    ,"CAST(CONVERT(Char, wla.dtapplied, 101) as DateTime)  Between  '#dat16#' AND '#dat26#'",     ,N    ,   ,Y
+0    ,T    ,"FillText11"    ,"Notes"    ,  ,""    ,"",     ,N    ,   ,Y
+//End Filter

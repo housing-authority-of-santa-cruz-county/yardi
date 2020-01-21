@@ -80,4 +80,6 @@ C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,
 0    ,T    ,"Field13"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field13#') ",     ,N    ,   ,Y
 0    ,T    ,"FillText11"    ,"Recipient Name"    ,  ,""    ,"",     ,N    ,   ,Y
 0    ,T    ,"FillText12"    ,"Recipient Address"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText13"    ,"Voucher Number"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText14"    ,"Expiration"    ,  ,""    ,"",     ,N    ,   ,Y
 //End Filter

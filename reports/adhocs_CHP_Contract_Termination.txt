@@ -10,6 +10,7 @@
     Adhoc Report (SQL Server)
   MODIFIED
     08/20/2019 - Created by jonathan
+    12/4/2019 - modified by lorena
 //End Notes
 
 //Database
@@ -21,11 +22,12 @@ OUTPUTTOPDF
 //End Options
 
 //Title
-CHP Contract Termination
+CHP - T or LL gave Notification
 //End Title
 
 //Select Primary
-SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_
+SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_NL1_
+	, CASE WHEN Tenant.sfields0 = 'Spanish' THEN 'Y_CHP_Termination_of_Program_Sp.docx' ELSE '' END _FILE_NL2_
 ,'\\asp1\bfs\busersdefpaths\Housing Authority of t 85430\Live\Reports\header_image.jpg'    headerImage,
                 rsc.chairperson                             chairperson,
                 rsc.viceChairperson                         viceChairperson,
@@ -36,6 +38,9 @@ SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_
                 rsc.boardmember5                            boardmember5,
                 rsc.execDirector                            execDirector
              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'EndDate'
+             , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'EndDateSp'
+	     , CASE WHEN '#FillText14#' = 'Tenant' Then 'tenant' ELSE 'landlord' END 'TLLWording'
+	     , CASE WHEN Tenant.sfields0 = 'Spanish' and '#FillText14#' = 'Tenant' Then 'inquilino' ELSE 'propietario' END 'TLLWordingSp'
              , p.sCode 'PropCode'
              , unit.sCode 'UnitCode'
              , tenant.sCode 'TenCode'
@@ -58,30 +63,35 @@ SELECT DISTINCT 'Y_CHP_Termination_of_Program.docx' _FILE_
                      case when isnull(UAddr.sCity, '') = 'Pending' then wla.sField2 else
                      case when isnull(UAddr.saddr3, '') <> '' then ltrim(rtrim(UAddr.saddr3)) + char(10) else '' end + case when isnull(UAddr.sCity, '') <> '' then ltrim(rtrim(UAddr.sCity)) else '' end + case when isnull(UAddr.sState, '') = '' and isnull(UAddr.sZipCode, '') = '' then ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) else ', ' + ltrim(rtrim(UAddr.sState)) + ' ' + ltrim(rtrim(UAddr.SZIPCODE)) end end 'UnitFullAddress'
              , GETDATE() 'LetterDate'
-FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
-LEFT JOIN addr UAddr ON (unit.hMy = UAddr.hPointer)  AND (UAddr.iType = 4)
-INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
-left JOIN wlapplic wla ON (wla.htenant = tenant.hmyperson)
-left join h8summ h8 on h8.htenant = Tenant.hmyperson
-left join vendor v on v.hmyperson = h8.hvendor
-left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
-cross join board_commishes_footer_RSC rsc
+             , GETDATE() 'LetterDateS'
+             FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+             INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+             left JOIN wlapplic wla ON (wla.htenant = tenant.hmyperson)
+             left join h8summ h8 on h8.htenant = Tenant.hmyperson AND (isNull(h8.hAuditUserApproved,-1) <> -1)
+             left join h8unit on h8unit.hunit=h8.hunit
+             LEFT JOIN addr UAddr ON (h8unit.hUnit = UAddr.hMy)  AND (UAddr.iType = 4)
+             left join vendor v on v.hmyperson = h8.hvendor
+             left join person pr on pr.hmy = v.hmyperson AND pr.iPersonType=5
+             cross join board_commishes_footer_RSC rsc
 
 WHERE 1 = 1
 AND p.itype = 3
-AND v.uLastName IS NOT NULL
+AND v.uLastName IS NOT NULL AND h8.hVendor <> 0
  #conditions#
 //End Select Primary
 
 //Format
 EndDate MMMM DD, YYYY
+EndDateSp MM/DD/YYYY
 LetterDate MMMM DD, YYYY
+LetterDateS MM/DD/YYYY
 //End Format
 
 //Filter
 //Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
 0    ,A    ,"FillDate11"    ,"Cancel Date"    ,  ,""    ,"",     ,N    ,   ,Y
+L    ,T    ,"FillText14"    ,"Who Notified the HA"    ,  ,"Tenant^Landlord"    ,"",     ,Y    ,   ,Y
 C    ,T    ,"p.hMy"    ,"Property"    ,  ,"61"    ,"p.hMy = #p.hMy# "    ,     ,N    ,   ,Y
 0    ,T    ,"Field19"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field19#') ",     ,N    ,   ,Y
-0    ,T    ,"Field110"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field110#') ",     ,N    ,   ,Y
+0    ,T    ,"Field110"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field110#') ",     ,Y    ,   ,Y
 //End Filter

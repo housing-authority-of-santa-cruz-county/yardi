@@ -160,4 +160,3 @@ SecDep   ###,##0.00
 	 L,       T,        Water,           Water Paid By,           ,   ^Tenant^Authority,                                        ,             ,         Y,          ,       ,
 	 L,		  T,   ReportType,                Language,           ,     English^Spanish,                                        ,             ,         N,          ,       ,
 	 //End Filter
-	 

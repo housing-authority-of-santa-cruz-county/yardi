@@ -1,0 +1,96 @@
+//Vista
+
+//Notes
+  Copyright (c) 2003 by Yardi Systems
+  NAME
+    adhocs_adhocs_mcmo.txt
+  DESCRIPTION
+
+  NOTES
+    Adhoc Report (SQL Server)
+  MODIFIED
+    12/09/2019 - Created by jonathan
+    12/09/2019 - Last Modified by jonathan
+//End Notes
+
+//Database
+FillDocs
+//End Database
+
+//Options
+OUTPUTTOPDF
+//End Options
+
+//Title
+mcmo
+//End Title
+
+//Select Primary
+ declare @balance float;set @balance=cast(isnull('#FillText15#',0) as float)+cast(isnull('#FillText18#',0) as float)-cast(isnull('#FillText16#',0) as float)-cast(isnull('#FillText17#',0) as float)-cast(isnull('#FillText19#',0) as float);SELECT  'y_Adhoc_MCMO.docx' _FILE_,
+ rsc.chairperson                             chairperson,
+ rsc.viceChairperson                         viceChairperson,
+ rsc.boardmember1                            boardmember1,
+ rsc.boardmember2                            boardmember2,
+ rsc.boardmember3                            boardmember3,
+ rsc.boardmember4                            boardmember4,
+ rsc.boardmember5                            boardmember5,
+ rsc.execDirector                            execDirector
+              , CASE WHEN '#FillDate11#' = '01/01/1900' THEN GetDate() ELSE '#FillDate11#' END 'VacateDate'
+              , CASE WHEN isnull('#FillText12#','') <> '' THEN '#FillText12#' else cast(Unit.ibedrooms as varchar(4)) end 'Bedrooms'
+              , '#FillText15#' 'SecurityDeposit'
+              , '#FillText16#' 'OtherCharges'
+              , '#FillText17#' 'UnpaidRent'
+              , '#FillText18#' 'RentCredit'
+              , '#FillText19#' 'MaintCharges'
+              , '#FillText10#' 'PASSYear'
+              , @balance 'Balance'
+              , case WHEN @balance > 0 then @balance else 0.00 end 'Refund'
+              , case WHEN @balance < 0 then abs(@balance) else 0.00 end 'AmtOwed'
+              , tenant.sCode 'TenCode'
+              , 'xxxxx' + RIGHT(RTRIM(replace(tenant.sFedid,'-','')),4) 'TenMaskedSSN'
+              , unit.sCode 'unitID'
+              , GETDATE() 'LetterDate'
+              , RTrim(tenant.sFirstName) + ' ' + tenant.sLastName 'TenFirstLast'
+              , case when isnull('#FillText20#','') <> '' Then ltrim(rtrim('#FillText20#')) + '^' + ltrim(rtrim('#FillText21#')) else case when isnull(tenant.saddr1, '') <> '' then ltrim(rtrim(tenant.saddr1)) + '^' else '' end + case when isnull(tenant.saddr2, '') <> '' then ltrim(rtrim(tenant.saddr2)) + '^' else '' end + case when isnull(tenant.sCity, '') <> '' then ltrim(rtrim(tenant.sCity)) else '' end + case when isnull(tenant.sState, '') = '' and isnull(tenant.sZipCode, '') = '' then ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) else ', ' + ltrim(rtrim(tenant.sState)) + ' ' + ltrim(rtrim(tenant.SZIPCODE)) end end 'TenFullAddress'
+ FROM  Property p  INNER JOIN Unit ON (p.hMy = unit.hProperty)
+ INNER JOIN Tenant ON (unit.hMy = tenant.hUnit)
+cross join board_commishes_footer_RSC rsc
+
+ WHERE 1 = 1
+ AND p.itype = 3
+ #conditions#
+
+//End Select Primary
+
+//Format
+VacateDate MMMM DD, YYYY
+TenMaskedSSN &&&-&&-&&&&
+LetterDate MMMM DD, YYYY
+TenFullAddress Multiline
+//GateCardDeposit $####
+//GateCardCharges $####
+//GateCardRefund $####
+//SecurityDeposit $####
+//OtherCharges $####
+//UnpaidRent $####
+//RentCredit $####
+//MaintCharges $####
+//Balance $####
+//AmtOwed $####
+//End Format
+
+//Filter
+//Type, DataTyp,Name,           Caption,        Key,    List,                   Val1,             Val2, Mandatory,Multi-Type, Title
+0    ,A    ,"FillDate11"    ,"Vacate Date"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText20"    ,"Street Address"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText21"    ,"City State Zip"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText12"    ,"Bedrooms"    ,  ,""    ,"",     ,N    ,   ,Y
+0    ,T    ,"FillText15"    ,"Security Deposit"    ,  ,""    ,"",     ,Y    ,   ,Y
+0    ,T    ,"FillText16"    ,"Other Charges/Credits"    ,  ,""    ,"",     ,Y    ,   ,Y
+0    ,T    ,"FillText17"    ,"Unpaid Rent"    ,  ,""    ,"",     ,Y    ,   ,Y
+0    ,T    ,"FillText18"    ,"Rent Credit"    ,  ,""    ,"",     ,Y    ,   ,Y
+0    ,T    ,"FillText19"    ,"Maint. Charges"    ,  ,""    ,"",     ,Y    ,   ,Y
+0    ,T    ,"FillText10"    ,"PASS Year"    ,  ,""    ,"",     ,Y    ,   ,Y
+0    ,T    ,"Field18"    ,"Tenant"    ,  ,"1"    ,"tenant.sCode  IN  ('#Field18#') ",     ,Y    ,   ,Y
+0    ,T    ,"Field110"    ,"Unit"    ,  ,"4"    ,"unit.sCode  IN  ('#Field110#') ",     ,N    ,   ,Y
+//End Filter
